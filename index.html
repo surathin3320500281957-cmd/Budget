@@ -260,6 +260,13 @@ table.data tbody tr.summary-total{
 table.data tbody tr.summary-total:hover{background:var(--steel-soft, #EEF1F9);}
 table.data tbody tr.summary-total td{color:var(--ink,#152238);border-top:2px solid var(--blue);}
 
+/* ---------- Summary table: plain, non-interactive report (grouped by กอง) ---------- */
+table.data.no-sort thead th{cursor:default;}
+#summaryTable tbody tr{cursor:default;}
+#summaryTable tbody tr:hover{background:transparent;}
+#summaryTable tbody tr.kong-subtotal{font-weight:800;}
+#summaryTable tbody tr.kong-subtotal td{color:var(--text);}
+
 </style>
 </head>
 <body>
@@ -376,7 +383,7 @@ table.data tbody tr.summary-total td{color:var(--ink,#152238);border-top:2px sol
 
   <div class="panel">
     <div class="panel-hd">
-      <h2>ตารางสรุปตามกอง / สาขา <span class="hint">— คลิกแถวเพื่อกรอง</span></h2>
+      <h2>ตารางสรุปตามกอง / สาขา</h2>
       <div class="tbl-export no-print">
         <button class="btn btn-red btn-sm" id="btnPdfSummary" title="เปิดแท็บเบราว์เซอร์สำหรับพิมพ์ / บันทึกเป็น PDF">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9V2h9l3 3v4"/><path d="M6 18H4a1 1 0 0 1-1-1v-6a1 1 0 0 1 1-1h16a1 1 0 0 1 1 1v6a1 1 0 0 1-1 1h-2"/><path d="M6 14h12v8H6z"/></svg>
@@ -389,17 +396,17 @@ table.data tbody tr.summary-total td{color:var(--ink,#152238);border-top:2px sol
       </div>
     </div>
     <div class="tbl-scroll">
-      <table class="data" id="summaryTable">
+      <table class="data no-sort" id="summaryTable">
         <thead>
           <tr>
-            <th data-key="kong" class="left">กอง<span class="sort-arrow">↕</span></th>
-            <th data-key="branch" class="left">สาขา<span class="sort-arrow">↕</span></th>
-            <th data-key="count">ทั้งหมด<span class="sort-arrow">↕</span></th>
-            <th data-key="billed">ขอเบิกแล้ว<span class="sort-arrow">↕</span></th>
-            <th data-key="billedAmount">จำนวนเงิน<span class="sort-arrow">↕</span></th>
-            <th data-key="pending">ยังไม่ขอเบิก<span class="sort-arrow">↕</span></th>
-            <th data-key="pendingAmount">จำนวนเงิน<span class="sort-arrow">↕</span></th>
-            <th data-key="amount">มูลค่ารวม(บาท)<span class="sort-arrow">↕</span></th>
+            <th class="left">กอง</th>
+            <th class="left">สาขา</th>
+            <th>ทั้งหมด</th>
+            <th>ขอเบิกแล้ว</th>
+            <th>จำนวนเงิน</th>
+            <th>ยังไม่ขอเบิก</th>
+            <th>จำนวนเงิน</th>
+            <th>มูลค่ารวม(บาท)</th>
           </tr>
         </thead>
         <tbody id="summaryBody"></tbody>
@@ -588,7 +595,6 @@ const state = {
   kong:"", branch:"", search:"", bucket:"", change:"",
   billed:null, // null=all, true=billed, false=pending
   rankMetric:"count",
-  sortSummary:{key:"pending", dir:-1},
   sortDetail:{key:"daysPendingSort", dir:-1}
 };
 
@@ -865,43 +871,75 @@ function getSummaryRows(){
       if(r.daysSinceBilled!==null){ g.billedDaysSum += r.daysSinceBilled; g.billedDaysN++; }
     }
   });
-  let arr = Array.from(m.values()).map(g=>Object.assign(g,{
+  return Array.from(m.values()).map(g=>Object.assign(g,{
     billedDays: g.billedDaysN? g.billedDaysSum/g.billedDaysN : 0,
     pendingDays: g.pendingDaysN? g.pendingDaysSum/g.pendingDaysN : 0
   }));
-  const {key,dir} = state.sortSummary;
-  arr.sort((a,b)=>{
-    const av=a[key], bv=b[key];
-    if(typeof av==='string') return av.localeCompare(bv,'th')*dir;
-    return (av-bv)*dir;
+}
+
+// สีประจำกอง (คงที่ ใช้ตัดกับสีเดียวกันทั้ง dashboard เพื่อให้สังเกตกลุ่มได้ง่าย)
+const KONG_COLORS = { 'มบ.':'#F0883E', 'ตบ.1':'#F0B429', 'ตบ.2':'#C4D93B' };
+function kongColor(k){ return KONG_COLORS[k] || '#94A3B8'; }
+
+// จัดกลุ่มตามกอง พร้อมยอดรวมย่อยต่อกอง (เรียงกองตามจำนวนรวมมาก->น้อย, ในกองเรียงสาขาตามจำนวนมาก->น้อย)
+function buildGroupedSummary(){
+  const rows = getSummaryRows();
+  const groups = new Map();
+  rows.forEach(r=>{
+    if(!groups.has(r.kong)) groups.set(r.kong, []);
+    groups.get(r.kong).push(r);
   });
-  return arr;
+  const kongGroups = Array.from(groups.entries()).map(([kong,list])=>{
+    list.sort((a,b)=>b.count-a.count);
+    const t = list.reduce((a,g)=>({
+      count:a.count+g.count, billed:a.billed+g.billed, billedAmount:a.billedAmount+g.billedAmount,
+      pending:a.pending+g.pending, pendingAmount:a.pendingAmount+g.pendingAmount, amount:a.amount+g.amount
+    }), {count:0,billed:0,billedAmount:0,pending:0,pendingAmount:0,amount:0});
+    return { kong, list, total: t };
+  });
+  kongGroups.sort((a,b)=> b.total.count - a.total.count);
+  return kongGroups;
 }
 
 function renderSummary(){
-  const arr = getSummaryRows();
+  const kongGroups = buildGroupedSummary();
   const body = $('#summaryBody');
-  if(!arr.length){ body.innerHTML = '<tr class="empty-row"><td colspan="8">ไม่มีข้อมูลตรงกับตัวกรองนี้</td></tr>'; return; }
-  const rowsHtml = arr.map(g=>{
-    const sel = (!state.branch && state.kong===g.kong) || (state.branch===g.branch);
-    return `<tr class="${sel?'selected':''}" data-kong="${esc(g.kong)}" data-branch="${esc(g.branch)}">
-      <td class="left">${esc(g.kong)}</td>
-      <td class="left">${esc(g.branch)}</td>
-      <td>${fmtInt(g.count)}</td>
-      <td>${fmtInt(g.billed)}</td>
-      <td>${fmtAmt(g.billedAmount)}</td>
-      <td>${fmtInt(g.pending)}</td>
-      <td>${fmtAmt(g.pendingAmount)}</td>
-      <td>${fmtAmt(g.amount)}</td>
-    </tr>`;
-  }).join('');
+  if(!kongGroups.length){ body.innerHTML = '<tr class="empty-row"><td colspan="8">ไม่มีข้อมูลตรงกับตัวกรองนี้</td></tr>'; return; }
 
-  const t = arr.reduce((a,g)=>({
-    count:a.count+g.count, billed:a.billed+g.billed, billedAmount:a.billedAmount+g.billedAmount,
-    pending:a.pending+g.pending, pendingAmount:a.pendingAmount+g.pendingAmount, amount:a.amount+g.amount
+  let rowsHtml = '';
+  let branchCount = 0;
+  kongGroups.forEach(kg=>{
+    const color = kongColor(kg.kong);
+    kg.list.forEach(g=>{
+      branchCount++;
+      rowsHtml += `<tr style="border-left:4px solid ${color};">
+        <td class="left">${esc(g.kong)}</td>
+        <td class="left">${esc(g.branch)}</td>
+        <td>${fmtInt(g.count)}</td>
+        <td>${fmtInt(g.billed)}</td>
+        <td>${fmtAmt(g.billedAmount)}</td>
+        <td>${fmtInt(g.pending)}</td>
+        <td>${fmtAmt(g.pendingAmount)}</td>
+        <td>${fmtAmt(g.amount)}</td>
+      </tr>`;
+    });
+    rowsHtml += `<tr class="kong-subtotal" style="border-left:4px solid ${color};background:${color}22;">
+      <td class="left" colspan="2">รวม ${esc(kg.kong)} (${kg.list.length} สาขา)</td>
+      <td>${fmtInt(kg.total.count)}</td>
+      <td>${fmtInt(kg.total.billed)}</td>
+      <td>${fmtAmt(kg.total.billedAmount)}</td>
+      <td>${fmtInt(kg.total.pending)}</td>
+      <td>${fmtAmt(kg.total.pendingAmount)}</td>
+      <td>${fmtAmt(kg.total.amount)}</td>
+    </tr>`;
+  });
+
+  const t = kongGroups.reduce((a,kg)=>({
+    count:a.count+kg.total.count, billed:a.billed+kg.total.billed, billedAmount:a.billedAmount+kg.total.billedAmount,
+    pending:a.pending+kg.total.pending, pendingAmount:a.pendingAmount+kg.total.pendingAmount, amount:a.amount+kg.total.amount
   }), {count:0,billed:0,billedAmount:0,pending:0,pendingAmount:0,amount:0});
   const totalHtml = `<tr class="summary-total">
-      <td class="left" colspan="2">รวมทั้งหมด (${arr.length} สาขา)</td>
+      <td class="left" colspan="2">รวมทั้งหมด (${branchCount} สาขา)</td>
       <td>${fmtInt(t.count)}</td>
       <td>${fmtInt(t.billed)}</td>
       <td>${fmtAmt(t.billedAmount)}</td>
@@ -1014,14 +1052,6 @@ $('#chipRow').addEventListener('click', e=>{
   renderAll();
 });
 $('#rankMetric').addEventListener('change', e=>{ state.rankMetric = e.target.value; renderKongChart(); renderBranchChart(); });
-$('#summaryBody').addEventListener('click', e=>{
-  const tr = e.target.closest('tr');
-  if(!tr || !tr.dataset.kong) return;
-  const k = tr.dataset.kong, b = tr.dataset.branch;
-  if(state.kong===k && state.branch===b){ state.kong=""; state.branch=""; }
-  else { state.kong=k; state.branch=b; }
-  renderAll();
-});
 $('#dqToggle').addEventListener('click', ()=>{
   const body = $('#dqBody');
   const open = body.classList.toggle('open');
@@ -1038,7 +1068,6 @@ $('#donutLegend').addEventListener('click', e=>{
   renderAll();
 });
 
-wireSortable('#summaryTable', 'sortSummary');
 wireSortable('#detailTable', 'sortDetail');
 
 /* ---------------- Shared export helpers ---------------- */
@@ -1160,11 +1189,30 @@ $('#btnXlsxDetail').addEventListener('click', async ()=>{
 
 /* ---------------- Export: ตารางสรุป ---------------- */
 $('#btnPdfSummary').addEventListener('click', ()=>{
-  const arr = getSummaryRows();
-  const totals = arr.reduce((a,g)=>({
-    count:a.count+g.count, billed:a.billed+g.billed, billedAmount:a.billedAmount+g.billedAmount,
-    pending:a.pending+g.pending, pendingAmount:a.pendingAmount+g.pendingAmount, amount:a.amount+g.amount
+  const kongGroups = buildGroupedSummary();
+  const branchCount = kongGroups.reduce((s,kg)=>s+kg.list.length,0);
+  const totals = kongGroups.reduce((a,kg)=>({
+    count:a.count+kg.total.count, billed:a.billed+kg.total.billed, billedAmount:a.billedAmount+kg.total.billedAmount,
+    pending:a.pending+kg.total.pending, pendingAmount:a.pendingAmount+kg.total.pendingAmount, amount:a.amount+kg.total.amount
   }), {count:0,billed:0,billedAmount:0,pending:0,pendingAmount:0,amount:0});
+
+  let bodyRows = '';
+  kongGroups.forEach(kg=>{
+    kg.list.forEach(g=>{
+      bodyRows += `<tr>
+        <td>${esc(g.kong)}</td><td>${esc(g.branch)}</td><td>${fmtInt(g.count)}</td>
+        <td>${fmtInt(g.billed)}</td><td>${fmtAmt(g.billedAmount)}</td>
+        <td>${fmtInt(g.pending)}</td><td>${fmtAmt(g.pendingAmount)}</td>
+        <td>${fmtAmt(g.amount)}</td>
+      </tr>`;
+    });
+    bodyRows += `<tr style="font-weight:700;background:#F1F3F9;">
+      <td colspan="2">รวม ${esc(kg.kong)} (${kg.list.length} สาขา)</td><td>${fmtInt(kg.total.count)}</td>
+      <td>${fmtInt(kg.total.billed)}</td><td>${fmtAmt(kg.total.billedAmount)}</td>
+      <td>${fmtInt(kg.total.pending)}</td><td>${fmtAmt(kg.total.pendingAmount)}</td>
+      <td>${fmtAmt(kg.total.amount)}</td>
+    </tr>`;
+  });
 
   const html = `<!DOCTYPE html><html lang="th"><head><meta charset="UTF-8">
   <title>รายงานตารางสรุป — SLA Dashboard</title>
@@ -1183,14 +1231,9 @@ $('#btnPdfSummary').addEventListener('click', ()=>{
   <table><thead><tr>
     <th>กอง</th><th>สาขา</th><th>ทั้งหมด</th><th>ขอเบิกแล้ว</th><th>จำนวนเงิน</th><th>ยังไม่ขอเบิก</th><th>จำนวนเงิน</th><th>มูลค่ารวม(บาท)</th>
   </tr></thead><tbody>
-    ${arr.map(g=>`<tr>
-      <td>${esc(g.kong)}</td><td>${esc(g.branch)}</td><td>${fmtInt(g.count)}</td>
-      <td>${fmtInt(g.billed)}</td><td>${fmtAmt(g.billedAmount)}</td>
-      <td>${fmtInt(g.pending)}</td><td>${fmtAmt(g.pendingAmount)}</td>
-      <td>${fmtAmt(g.amount)}</td>
-    </tr>`).join('')}
+    ${bodyRows}
     <tr style="font-weight:700;background:#EEF1F9;">
-      <td colspan="2">รวมทั้งหมด (${arr.length} สาขา)</td><td>${fmtInt(totals.count)}</td>
+      <td colspan="2">รวมทั้งหมด (${branchCount} สาขา)</td><td>${fmtInt(totals.count)}</td>
       <td>${fmtInt(totals.billed)}</td><td>${fmtAmt(totals.billedAmount)}</td>
       <td>${fmtInt(totals.pending)}</td><td>${fmtAmt(totals.pendingAmount)}</td>
       <td>${fmtAmt(totals.amount)}</td>
@@ -1201,23 +1244,32 @@ $('#btnPdfSummary').addEventListener('click', ()=>{
 });
 
 $('#btnXlsxSummary').addEventListener('click', async ()=>{
-  const arr = getSummaryRows();
-  const totals = arr.reduce((a,g)=>({
-    count:a.count+g.count, billed:a.billed+g.billed, billedAmount:a.billedAmount+g.billedAmount,
-    pending:a.pending+g.pending, pendingAmount:a.pendingAmount+g.pendingAmount, amount:a.amount+g.amount
+  const kongGroups = buildGroupedSummary();
+  const branchCount = kongGroups.reduce((s,kg)=>s+kg.list.length,0);
+  const totals = kongGroups.reduce((a,kg)=>({
+    count:a.count+kg.total.count, billed:a.billed+kg.total.billed, billedAmount:a.billedAmount+kg.total.billedAmount,
+    pending:a.pending+kg.total.pending, pendingAmount:a.pendingAmount+kg.total.pendingAmount, amount:a.amount+kg.total.amount
   }), {count:0,billed:0,billedAmount:0,pending:0,pendingAmount:0,amount:0});
-  const data = arr.map(g=>({
-    "กอง": g.kong,
-    "สาขา": g.branch,
-    "ทั้งหมด": g.count,
-    "ขอเบิกแล้ว": g.billed,
-    "จำนวนเงิน (ขอเบิกแล้ว)": g.billedAmount,
-    "ยังไม่ขอเบิก": g.pending,
-    "จำนวนเงิน (ยังไม่ขอเบิก)": g.pendingAmount,
-    "มูลค่ารวม (บาท)": g.amount
-  }));
+
+  const data = [];
+  kongGroups.forEach(kg=>{
+    kg.list.forEach(g=>{
+      data.push({
+        "กอง": g.kong, "สาขา": g.branch, "ทั้งหมด": g.count,
+        "ขอเบิกแล้ว": g.billed, "จำนวนเงิน (ขอเบิกแล้ว)": g.billedAmount,
+        "ยังไม่ขอเบิก": g.pending, "จำนวนเงิน (ยังไม่ขอเบิก)": g.pendingAmount,
+        "มูลค่ารวม (บาท)": g.amount
+      });
+    });
+    data.push({
+      "กอง": `รวม ${kg.kong} (${kg.list.length} สาขา)`, "สาขา": "", "ทั้งหมด": kg.total.count,
+      "ขอเบิกแล้ว": kg.total.billed, "จำนวนเงิน (ขอเบิกแล้ว)": kg.total.billedAmount,
+      "ยังไม่ขอเบิก": kg.total.pending, "จำนวนเงิน (ยังไม่ขอเบิก)": kg.total.pendingAmount,
+      "มูลค่ารวม (บาท)": kg.total.amount
+    });
+  });
   data.push({
-    "กอง": `รวมทั้งหมด (${arr.length} สาขา)`,
+    "กอง": `รวมทั้งหมด (${branchCount} สาขา)`,
     "สาขา": "",
     "ทั้งหมด": totals.count,
     "ขอเบิกแล้ว": totals.billed,
