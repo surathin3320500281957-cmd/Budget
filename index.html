@@ -425,6 +425,8 @@ table.data tbody tr.row-overdue:hover td{background:#f9d3dd;}
             <th data-key="project" class="left">โครงการ<span class="sort-arrow">↕</span></th>
             <th data-key="address" class="left">บ้านเลขที่<span class="sort-arrow">↕</span></th>
             <th data-key="id" class="left">เลขที่คำร้อง<span class="sort-arrow">↕</span></th>
+            <th data-key="st11Sort">ตรวจการจ้าง (ST11)<span class="sort-arrow">↕</span></th>
+            <th data-key="st12Sort">ขอเบิกค่าจ้าง (ST12)<span class="sort-arrow">↕</span></th>
             <th data-key="statusSort" class="left">สถานะ<span class="sort-arrow">↕</span></th>
             <th data-key="changeSort" class="left">การเปลี่ยนแปลง<span class="sort-arrow">↕</span></th>
             <th data-key="daysPendingSort">วันค้างเบิกค่าจ้าง<span class="sort-arrow">↕</span></th>
@@ -555,6 +557,8 @@ const ALL = RAW.map(r=>{
   const daysSinceBilled = (!r.pending && st12) ? daysBetween(TODAY, st12) : null;
   return Object.assign({}, r, {
     st11d: st11, st12d: st12, daysPending, daysSinceBilled,
+    st11Sort: st11 ? st11.getTime() : 0,
+    st12Sort: st12 ? st12.getTime() : 0,
     daysPendingSort: r.pending ? daysPending : -1,
     daysSinceBilledSort: (!r.pending && daysSinceBilled!==null) ? daysSinceBilled : -1,
     statusSort: r.pending ? 0 : 1,
@@ -833,7 +837,6 @@ function getDetailRows(){
   const {key,dir} = state.sortDetail;
   const sorted = rows.slice().sort((a,b)=>{
     let av=a[key], bv=b[key];
-    if(key==='st11'){ av=a.st11d?a.st11d.getTime():0; bv=b.st11d?b.st11d.getTime():0; }
     if(typeof av==='string') return av.localeCompare(bv,'th')*dir;
     return ((av||0)-(bv||0))*dir;
   });
@@ -844,7 +847,7 @@ function renderDetail(){
   const rows = getDetailRows();
   $('#detailCount').textContent = `${fmtInt(rows.length)} รายการ`;
   const body = $('#detailBody');
-  if(!rows.length){ body.innerHTML = '<tr class="empty-row"><td colspan="9">ไม่มีข้อมูลตรงกับตัวกรองนี้</td></tr>'; return; }
+  if(!rows.length){ body.innerHTML = '<tr class="empty-row"><td colspan="11">ไม่มีข้อมูลตรงกับตัวกรองนี้</td></tr>'; return; }
   body.innerHTML = rows.map(r=>{
     const statusBadge = r.pending ? `<span class="badge pend">ยังไม่ขอเบิก</span>` : `<span class="badge billed">ขอเบิกแล้ว</span>`;
     const ci = changeInfo(r.changeKey);
@@ -863,6 +866,8 @@ function renderDetail(){
       <td class="left">${esc(r.project)}</td>
       <td class="left">${esc(r.address)}</td>
       <td class="left">${r.id}</td>
+      <td>${thaiDate(r.st11d)}</td>
+      <td>${r.st12d ? thaiDate(r.st12d) : '-'}</td>
       <td class="left">${statusBadge}</td>
       <td class="left">${changeBadge}</td>
       <td>${pendingCell}</td>
@@ -1018,8 +1023,8 @@ $('#btnPdfDetail').addEventListener('click', ()=>{
   <title>รายงานตารางรายละเอียด — SLA Dashboard</title>
   <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@400;600;700&display=swap" rel="stylesheet">
   <style>${printCss}
-    td:nth-child(1),td:nth-child(2),td:nth-child(3),td:nth-child(4),td:nth-child(5),td:nth-child(6),td:nth-child(7),
-    th:nth-child(1),th:nth-child(2),th:nth-child(3),th:nth-child(4),th:nth-child(5),th:nth-child(6),th:nth-child(7){text-align:left;}
+    td:nth-child(1),td:nth-child(2),td:nth-child(3),td:nth-child(4),td:nth-child(5),td:nth-child(8),td:nth-child(9),
+    th:nth-child(1),th:nth-child(2),th:nth-child(3),th:nth-child(4),th:nth-child(5),th:nth-child(8),th:nth-child(9){text-align:left;}
   </style></head><body>
   <h1>รายงานตารางรายละเอียด — SLA Dashboard</h1>
   <div class="meta">ข้อมูล ณ วันที่ ${thaiDate(TODAY)} (เทียบกับรอบก่อน BF วันที่ ${BF_DATE?thaiDate(BF_DATE):"-"}) &middot; ตัวกรองที่ใช้: ${esc(filterDescText())}</div>
@@ -1032,10 +1037,11 @@ $('#btnPdfDetail').addEventListener('click', ()=>{
     <div>มูลค่ารวม<b>${fmtAmt(amount)} บาท</b></div>
   </div>
   <table><thead><tr>
-    <th>กอง</th><th>สาขา</th><th>โครงการ</th><th>บ้านเลขที่</th><th>เลขที่คำร้อง</th><th>สถานะ</th><th>การเปลี่ยนแปลง</th><th>วันค้างเบิกค่าจ้าง</th><th>วันขอเบิกค่าจ้างแล้ว</th><th>มูลค่า (บาท)</th>
+    <th>กอง</th><th>สาขา</th><th>โครงการ</th><th>บ้านเลขที่</th><th>เลขที่คำร้อง</th><th>ตรวจการจ้าง (ST11)</th><th>ขอเบิกค่าจ้าง (ST12)</th><th>สถานะ</th><th>การเปลี่ยนแปลง</th><th>วันค้างเบิกค่าจ้าง</th><th>วันขอเบิกค่าจ้างแล้ว</th><th>มูลค่า (บาท)</th>
   </tr></thead><tbody>
     ${rows.map(r=>`<tr class="${(r.pending && r.bucket==='60+')?'over':''}">
       <td>${esc(r.kong)}</td><td>${esc(r.branch)}</td><td>${esc(r.project)}</td><td>${esc(r.address)}</td><td>${r.id}</td>
+      <td>${thaiDate(r.st11d)}</td><td>${r.st12d?thaiDate(r.st12d):'-'}</td>
       <td>${r.pending?'ยังไม่ขอเบิก':'ขอเบิกแล้ว'}</td>
       <td>${esc(changeInfo(r.changeKey).label)}</td>
       <td>${r.pending?fmtInt(r.daysPending)+' วัน':'-'}</td>
@@ -1055,17 +1061,17 @@ $('#btnXlsxDetail').addEventListener('click', async ()=>{
     "โครงการ": r.project,
     "บ้านเลขที่": r.address,
     "เลขที่คำร้อง": r.id,
+    "ตรวจการจ้าง (ST11)": r.st11d ? r.st11d.toISOString().slice(0,10) : "",
+    "ขอเบิกค่าจ้าง (ST12)": r.st12d ? r.st12d.toISOString().slice(0,10) : "",
     "สถานะ": r.pending ? "ยังไม่ขอเบิกค่าจ้าง" : "ขอเบิกค่าจ้างแล้ว",
     "การเปลี่ยนแปลงจากครั้งก่อน": changeInfo(r.changeKey).label,
-    "วันที่ตรวจการจ้าง (ST11)": r.st11d ? r.st11d.toISOString().slice(0,10) : "",
-    "วันที่ขอเบิกค่าจ้าง (ST12)": r.st12d ? r.st12d.toISOString().slice(0,10) : "",
     "วันค้างเบิกค่าจ้าง": r.pending ? r.daysPending : "",
     "ช่วงวันค้าง": r.pending ? bucketOf(r.daysPending).label : "",
     "วันขอเบิกค่าจ้างแล้ว": (!r.pending && r.daysSinceBilled!==null) ? r.daysSinceBilled : "",
     "มูลค่า (บาท)": r.amount
   }));
   const ws = XLSX.utils.json_to_sheet(data);
-  ws['!cols'] = [{wch:8},{wch:14},{wch:32},{wch:14},{wch:12},{wch:18},{wch:24},{wch:16},{wch:16},{wch:14},{wch:12},{wch:16},{wch:12}];
+  ws['!cols'] = [{wch:8},{wch:14},{wch:32},{wch:14},{wch:12},{wch:16},{wch:16},{wch:18},{wch:24},{wch:14},{wch:12},{wch:16},{wch:12}];
   await downloadXlsx(ws, 'ตารางรายละเอียด', `SLA_รายละเอียด_${TODAY.toISOString().slice(0,10)}.xlsx`);
 });
 
