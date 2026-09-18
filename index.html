@@ -252,6 +252,14 @@ table.data tbody tr.row-overdue:hover td{background:#f9d3dd;}
 .btn-sm{padding:6px 11px;font-size:12px;border-radius:7px;gap:5px;}
 .btn-sm svg{width:13px;height:13px;}
 
+/* ---------- Summary table grand-total row ---------- */
+table.data tbody tr.summary-total{
+  cursor:default;background:var(--steel-soft, #EEF1F9);font-weight:800;
+  position:sticky;bottom:0;box-shadow:0 -1px 0 var(--line);
+}
+table.data tbody tr.summary-total:hover{background:var(--steel-soft, #EEF1F9);}
+table.data tbody tr.summary-total td{color:var(--ink,#152238);border-top:2px solid var(--blue);}
+
 </style>
 </head>
 <body>
@@ -816,7 +824,7 @@ function renderSummary(){
   const arr = getSummaryRows();
   const body = $('#summaryBody');
   if(!arr.length){ body.innerHTML = '<tr class="empty-row"><td colspan="8">ไม่มีข้อมูลตรงกับตัวกรองนี้</td></tr>'; return; }
-  body.innerHTML = arr.map(g=>{
+  const rowsHtml = arr.map(g=>{
     const sel = (!state.branch && state.kong===g.kong) || (state.branch===g.branch);
     return `<tr class="${sel?'selected':''}" data-kong="${esc(g.kong)}" data-branch="${esc(g.branch)}">
       <td class="left">${esc(g.kong)}</td>
@@ -829,6 +837,22 @@ function renderSummary(){
       <td>${fmtAmt(g.amount)}</td>
     </tr>`;
   }).join('');
+
+  const t = arr.reduce((a,g)=>({
+    count:a.count+g.count, billed:a.billed+g.billed, billedAmount:a.billedAmount+g.billedAmount,
+    pending:a.pending+g.pending, pendingAmount:a.pendingAmount+g.pendingAmount, amount:a.amount+g.amount
+  }), {count:0,billed:0,billedAmount:0,pending:0,pendingAmount:0,amount:0});
+  const totalHtml = `<tr class="summary-total">
+      <td class="left" colspan="2">รวมทั้งหมด (${arr.length} สาขา)</td>
+      <td>${fmtInt(t.count)}</td>
+      <td>${fmtInt(t.billed)}</td>
+      <td>${fmtAmt(t.billedAmount)}</td>
+      <td>${fmtInt(t.pending)}</td>
+      <td>${fmtAmt(t.pendingAmount)}</td>
+      <td>${fmtAmt(t.amount)}</td>
+    </tr>`;
+
+  body.innerHTML = rowsHtml + totalHtml;
 }
 
 /* ---------------- Detail table ---------------- */
@@ -1106,6 +1130,12 @@ $('#btnPdfSummary').addEventListener('click', ()=>{
       <td>${fmtInt(g.pending)}</td><td>${fmtAmt(g.pendingAmount)}</td>
       <td>${fmtAmt(g.amount)}</td>
     </tr>`).join('')}
+    <tr style="font-weight:700;background:#EEF1F9;">
+      <td colspan="2">รวมทั้งหมด (${arr.length} สาขา)</td><td>${fmtInt(totals.count)}</td>
+      <td>${fmtInt(totals.billed)}</td><td>${fmtAmt(totals.billedAmount)}</td>
+      <td>${fmtInt(totals.pending)}</td><td>${fmtAmt(totals.pendingAmount)}</td>
+      <td>${fmtAmt(totals.amount)}</td>
+    </tr>
   </tbody></table>
   </body></html>`;
   openPrintWindow(html);
@@ -1113,6 +1143,10 @@ $('#btnPdfSummary').addEventListener('click', ()=>{
 
 $('#btnXlsxSummary').addEventListener('click', async ()=>{
   const arr = getSummaryRows();
+  const totals = arr.reduce((a,g)=>({
+    count:a.count+g.count, billed:a.billed+g.billed, billedAmount:a.billedAmount+g.billedAmount,
+    pending:a.pending+g.pending, pendingAmount:a.pendingAmount+g.pendingAmount, amount:a.amount+g.amount
+  }), {count:0,billed:0,billedAmount:0,pending:0,pendingAmount:0,amount:0});
   const data = arr.map(g=>({
     "กอง": g.kong,
     "สาขา": g.branch,
@@ -1123,6 +1157,16 @@ $('#btnXlsxSummary').addEventListener('click', async ()=>{
     "จำนวนเงิน (ยังไม่ขอเบิก)": g.pendingAmount,
     "มูลค่ารวม (บาท)": g.amount
   }));
+  data.push({
+    "กอง": `รวมทั้งหมด (${arr.length} สาขา)`,
+    "สาขา": "",
+    "ทั้งหมด": totals.count,
+    "ขอเบิกแล้ว": totals.billed,
+    "จำนวนเงิน (ขอเบิกแล้ว)": totals.billedAmount,
+    "ยังไม่ขอเบิก": totals.pending,
+    "จำนวนเงิน (ยังไม่ขอเบิก)": totals.pendingAmount,
+    "มูลค่ารวม (บาท)": totals.amount
+  });
   const ws = XLSX.utils.json_to_sheet(data);
   ws['!cols'] = [{wch:8},{wch:14},{wch:10},{wch:12},{wch:16},{wch:12},{wch:16},{wch:16}];
   await downloadXlsx(ws, 'ตารางสรุป', `SLA_สรุป_${TODAY.toISOString().slice(0,10)}.xlsx`);
