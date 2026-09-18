@@ -433,6 +433,7 @@ table.data tbody tr.summary-total td{color:var(--ink,#152238);border-top:2px sol
             <th data-key="project" class="left">โครงการ<span class="sort-arrow">↕</span></th>
             <th data-key="address" class="left">บ้านเลขที่<span class="sort-arrow">↕</span></th>
             <th data-key="id" class="left">เลขที่คำร้อง<span class="sort-arrow">↕</span></th>
+            <th data-key="amount">จำนวนเงิน<span class="sort-arrow">↕</span></th>
             <th data-key="st11Sort">ตรวจการจ้าง (ST11)<span class="sort-arrow">↕</span></th>
             <th data-key="st12Sort">ขอเบิกค่าจ้าง (ST12)<span class="sort-arrow">↕</span></th>
             <th data-key="statusSort" class="left">สถานะ<span class="sort-arrow">↕</span></th>
@@ -871,7 +872,7 @@ function renderDetail(){
   const rows = getDetailRows();
   $('#detailCount').textContent = `${fmtInt(rows.length)} รายการ`;
   const body = $('#detailBody');
-  if(!rows.length){ body.innerHTML = '<tr class="empty-row"><td colspan="11">ไม่มีข้อมูลตรงกับตัวกรองนี้</td></tr>'; return; }
+  if(!rows.length){ body.innerHTML = '<tr class="empty-row"><td colspan="12">ไม่มีข้อมูลตรงกับตัวกรองนี้</td></tr>'; return; }
   body.innerHTML = rows.map(r=>{
     const statusBadge = r.pending ? `<span class="badge pend">ยังไม่ขอเบิก</span>` : `<span class="badge billed">ขอเบิกแล้ว</span>`;
     const ci = changeInfo(r.changeKey);
@@ -890,6 +891,7 @@ function renderDetail(){
       <td class="left">${esc(r.project)}</td>
       <td class="left">${esc(r.address)}</td>
       <td class="left">${r.id}</td>
+      <td>${fmtAmt(r.amount)}</td>
       <td>${thaiDate(r.st11d)}</td>
       <td>${r.st12d ? thaiDate(r.st12d) : '-'}</td>
       <td class="left">${statusBadge}</td>
@@ -1047,8 +1049,8 @@ $('#btnPdfDetail').addEventListener('click', ()=>{
   <title>รายงานตารางรายละเอียด — SLA Dashboard</title>
   <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@400;600;700&display=swap" rel="stylesheet">
   <style>${printCss}
-    td:nth-child(1),td:nth-child(2),td:nth-child(3),td:nth-child(4),td:nth-child(5),td:nth-child(8),td:nth-child(9),
-    th:nth-child(1),th:nth-child(2),th:nth-child(3),th:nth-child(4),th:nth-child(5),th:nth-child(8),th:nth-child(9){text-align:left;}
+    td:nth-child(1),td:nth-child(2),td:nth-child(3),td:nth-child(4),td:nth-child(5),td:nth-child(9),td:nth-child(10),
+    th:nth-child(1),th:nth-child(2),th:nth-child(3),th:nth-child(4),th:nth-child(5),th:nth-child(9),th:nth-child(10){text-align:left;}
   </style></head><body>
   <h1>รายงานตารางรายละเอียด — SLA Dashboard</h1>
   <div class="meta">ข้อมูล ณ วันที่ ${thaiDate(TODAY)} (เทียบกับรอบก่อน BF วันที่ ${BF_DATE?thaiDate(BF_DATE):"-"}) &middot; ตัวกรองที่ใช้: ${esc(filterDescText())}</div>
@@ -1061,16 +1063,16 @@ $('#btnPdfDetail').addEventListener('click', ()=>{
     <div>มูลค่ารวม<b>${fmtAmt(amount)} บาท</b></div>
   </div>
   <table><thead><tr>
-    <th>กอง</th><th>สาขา</th><th>โครงการ</th><th>บ้านเลขที่</th><th>เลขที่คำร้อง</th><th>ตรวจการจ้าง (ST11)</th><th>ขอเบิกค่าจ้าง (ST12)</th><th>สถานะ</th><th>การเปลี่ยนแปลง</th><th>วันค้างเบิกค่าจ้าง</th><th>วันขอเบิกค่าจ้างแล้ว</th><th>มูลค่า (บาท)</th>
+    <th>กอง</th><th>สาขา</th><th>โครงการ</th><th>บ้านเลขที่</th><th>เลขที่คำร้อง</th><th>จำนวนเงิน (บาท)</th><th>ตรวจการจ้าง (ST11)</th><th>ขอเบิกค่าจ้าง (ST12)</th><th>สถานะ</th><th>การเปลี่ยนแปลง</th><th>วันค้างเบิกค่าจ้าง</th><th>วันขอเบิกค่าจ้างแล้ว</th>
   </tr></thead><tbody>
     ${rows.map(r=>`<tr class="${(r.pending && r.bucket==='60+')?'over':''}">
       <td>${esc(r.kong)}</td><td>${esc(r.branch)}</td><td>${esc(r.project)}</td><td>${esc(r.address)}</td><td>${r.id}</td>
+      <td>${fmtAmt(r.amount)}</td>
       <td>${thaiDate(r.st11d)}</td><td>${r.st12d?thaiDate(r.st12d):'-'}</td>
       <td>${r.pending?'ยังไม่ขอเบิก':'ขอเบิกแล้ว'}</td>
       <td>${esc(changeInfo(r.changeKey).label)}</td>
       <td>${r.pending?fmtInt(r.daysPending)+' วัน':'-'}</td>
       <td>${(!r.pending && r.daysSinceBilled!==null)?fmtInt(r.daysSinceBilled)+' วัน':'-'}</td>
-      <td>${fmtAmt(r.amount)}</td>
     </tr>`).join('')}
   </tbody></table>
   </body></html>`;
@@ -1085,14 +1087,14 @@ $('#btnXlsxDetail').addEventListener('click', async ()=>{
     "โครงการ": r.project,
     "บ้านเลขที่": r.address,
     "เลขที่คำร้อง": r.id,
+    "มูลค่า (บาท)": r.amount,
     "ตรวจการจ้าง (ST11)": r.st11d ? r.st11d.toISOString().slice(0,10) : "",
     "ขอเบิกค่าจ้าง (ST12)": r.st12d ? r.st12d.toISOString().slice(0,10) : "",
     "สถานะ": r.pending ? "ยังไม่ขอเบิกค่าจ้าง" : "ขอเบิกค่าจ้างแล้ว",
     "การเปลี่ยนแปลงจากครั้งก่อน": changeInfo(r.changeKey).label,
     "วันค้างเบิกค่าจ้าง": r.pending ? r.daysPending : "",
     "ช่วงวันค้าง": r.pending ? bucketOf(r.daysPending).label : "",
-    "วันขอเบิกค่าจ้างแล้ว": (!r.pending && r.daysSinceBilled!==null) ? r.daysSinceBilled : "",
-    "มูลค่า (บาท)": r.amount
+    "วันขอเบิกค่าจ้างแล้ว": (!r.pending && r.daysSinceBilled!==null) ? r.daysSinceBilled : ""
   }));
   const ws = XLSX.utils.json_to_sheet(data);
   ws['!cols'] = [{wch:8},{wch:14},{wch:32},{wch:14},{wch:12},{wch:16},{wch:16},{wch:18},{wch:24},{wch:14},{wch:12},{wch:16},{wch:12}];
