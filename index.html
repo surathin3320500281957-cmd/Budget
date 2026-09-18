@@ -741,6 +741,62 @@ function renderKongChart(){ renderRankList('kongRank', 'kong'); }
 function renderBranchChart(){ renderRankList('branchRank', 'branch'); }
 
 /* ---------------- Donut ---------------- */
+// ปลั๊กอินเล็กๆ วาดจำนวน+เปอร์เซ็นต์ค้างไว้บนกราฟโดนัทถาวร (ไม่ต้องชี้เมาส์ถึงเห็น)
+const donutLabelPlugin = {
+  id: 'donutValueLabels',
+  afterDraw(chart){
+    const meta = chart.getDatasetMeta(0);
+    const dataset = chart.data.datasets[0];
+    const total = dataset.data.reduce((a,b)=>a+b,0);
+    if(!total) return;
+    const ctx = chart.ctx;
+    ctx.save();
+    ctx.font = '700 13px Sarabun, sans-serif';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    meta.data.forEach((arc,i)=>{
+      const value = dataset.data[i];
+      if(!value) return;
+      const pct = Math.round(value/total*100);
+      const pos = arc.getCenterPoint();
+      const label = `${value.toLocaleString('th-TH')} (${pct}%)`;
+
+      // ป้ายพื้นหลังทึบด้านหลังตัวเลข ให้อ่านง่ายไม่ว่าสีชิ้นส่วนจะเป็นอะไร
+      const padX = 8, padY = 5;
+      const textW = ctx.measureText(label).width;
+      const bw = textW + padX*2, bh = 13 + padY*2;
+
+      // กันป้ายโดนตัด/กลืนขอบ canvas: ดึงตำแหน่งศูนย์กลางเข้ามาไม่ให้ล้นขอบ
+      const margin = 3;
+      let cx = pos.x, cy = pos.y;
+      const halfW = bw/2, halfH = bh/2;
+      const canvasW = chart.width, canvasH = chart.height;
+      if(cx - halfW < margin) cx = margin + halfW;
+      if(cx + halfW > canvasW - margin) cx = canvasW - margin - halfW;
+      if(cy - halfH < margin) cy = margin + halfH;
+      if(cy + halfH > canvasH - margin) cy = canvasH - margin - halfH;
+
+      const bx = cx - bw/2, by = cy - bh/2, r = bh/2;
+      ctx.fillStyle = 'rgba(15,23,42,.72)';
+      ctx.beginPath();
+      if(ctx.roundRect){ ctx.roundRect(bx, by, bw, bh, r); }
+      else {
+        ctx.moveTo(bx+r, by);
+        ctx.arcTo(bx+bw, by, bx+bw, by+bh, r);
+        ctx.arcTo(bx+bw, by+bh, bx, by+bh, r);
+        ctx.arcTo(bx, by+bh, bx, by, r);
+        ctx.arcTo(bx, by, bx+bw, by, r);
+      }
+      ctx.closePath();
+      ctx.fill();
+
+      ctx.fillStyle = '#fff';
+      ctx.fillText(label, cx, cy);
+    });
+    ctx.restore();
+  }
+};
+
 function renderDonut(){
   if(typeof Chart === 'undefined'){
     $('#donutLegend').innerHTML = '<span style="color:var(--text-faint)">ไม่สามารถโหลดไลบรารีกราฟได้</span>';
@@ -765,6 +821,7 @@ function renderDonut(){
   donutChart = new Chart(ctx, {
     type:'doughnut',
     data:{ labels:['ขอเบิกค่าจ้างแล้ว','ยังไม่ขอเบิกค่าจ้าง'], datasets:[{ data:[billedN,pendingN], backgroundColor:colors, borderWidth:0 }]},
+    plugins:[donutLabelPlugin],
     options:{
       responsive:true, maintainAspectRatio:false, cutout:'68%',
       plugins:{ legend:{display:false}, tooltip:{ callbacks:{
