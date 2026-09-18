@@ -59,19 +59,30 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);font-size:14
   border-radius:20px;padding:7px 14px;font-size:12.5px;font-weight:600;white-space:nowrap;
 }
 
-/* ---------- Toolbar / filters ---------- */
+/* ---------- Toolbar / filters (pill style, per reference) ---------- */
 .filters{
-  display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end;
+  display:flex;gap:16px;flex-wrap:wrap;align-items:center;
   background:var(--card);border:1px solid var(--line);border-radius:var(--radius);
-  padding:14px 16px;margin-bottom:14px;box-shadow:0 1px 2px rgba(20,30,60,.04);
+  padding:16px 18px;margin-bottom:14px;box-shadow:0 1px 2px rgba(20,30,60,.04);
 }
-.f-field{display:flex;flex-direction:column;gap:4px;}
-.f-field label{font-size:11.5px;color:var(--text-mute);font-weight:700;}
+.f-field{display:flex;flex-direction:row;align-items:center;gap:9px;}
+.f-field label{font-size:14px;color:var(--text);font-weight:700;white-space:nowrap;}
 .f-field select, .f-field input[type="text"], .f-field input[type="number"]{
-  font-family:var(--font);font-size:13.5px;padding:8px 10px;border-radius:8px;
-  border:1px solid var(--line);background:var(--bg);color:var(--text);min-width:150px;
+  font-family:var(--font);font-size:13.5px;padding:9px 16px;border-radius:999px;
+  border:1.5px solid var(--blue);background:var(--card);color:var(--text);min-width:150px;
+  appearance:none;-webkit-appearance:none;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%232F6FED' stroke-width='2.5'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
+  background-repeat:no-repeat;background-position:right 12px center;background-size:14px;
+  padding-right:34px;cursor:pointer;transition:box-shadow .15s,border-color .15s;
 }
-.f-field input[type="number"]{min-width:70px;width:76px;}
+.f-field input[type="text"], .f-field input[type="number"]{
+  background-image:none;cursor:text;padding-right:16px;
+}
+.f-field select:hover, .f-field input:hover{border-color:var(--blue2);}
+.f-field select:focus, .f-field input:focus{
+  outline:none;border-color:var(--blue2);box-shadow:0 0 0 4px rgba(47,111,237,.18);
+}
+.f-field input[type="number"]{min-width:70px;width:84px;}
 .f-field.search input{min-width:230px;}
 .f-spacer{flex:1;}
 .btn{
@@ -273,7 +284,7 @@ table.data tbody tr.row-overdue:hover td{background:#f9d3dd;}
     <div class="f-field">
       <label>ช่วงวันค้างสถานะขอเบิกค่าจ้าง</label>
       <select id="fBucket">
-        <option value="">ทั้งหมด</option>
+        <option value="">ทุกช่วงวัน</option>
         <option value="0-15">0-15 วัน</option>
         <option value="16-30">16-30 วัน</option>
         <option value="31-45">31-45 วัน</option>
@@ -402,6 +413,7 @@ table.data tbody tr.row-overdue:hover td{background:#f9d3dd;}
             <th data-key="kong" class="left">กอง<span class="sort-arrow">↕</span></th>
             <th data-key="branch" class="left">สาขา<span class="sort-arrow">↕</span></th>
             <th data-key="project" class="left">โครงการ<span class="sort-arrow">↕</span></th>
+            <th data-key="address" class="left">บ้านเลขที่<span class="sort-arrow">↕</span></th>
             <th data-key="id" class="left">เลขที่คำร้อง<span class="sort-arrow">↕</span></th>
             <th data-key="statusSort" class="left">สถานะ<span class="sort-arrow">↕</span></th>
             <th data-key="daysPendingSort">วันค้างเบิกค่าจ้าง<span class="sort-arrow">↕</span></th>
@@ -535,16 +547,16 @@ const state = {
 
 /* ---------------- Dropdowns ---------------- */
 function uniqSorted(arr){ return Array.from(new Set(arr)).sort((a,b)=>a.localeCompare(b,'th')); }
-function fillSelect(sel, values, current){
+function fillSelect(sel, values, current, allLabel){
   const el = $(sel);
   const keep = current || "";
-  el.innerHTML = '<option value="">ทั้งหมด</option>' + values.map(v=>`<option value="${esc(v)}">${esc(v)}</option>`).join('');
+  el.innerHTML = `<option value="">${allLabel||'ทั้งหมด'}</option>` + values.map(v=>`<option value="${esc(v)}">${esc(v)}</option>`).join('');
   el.value = values.includes(keep) ? keep : "";
 }
 function refreshDropdowns(){
-  fillSelect('#fKong', uniqSorted(ALL.map(r=>r.kong)), state.kong);
+  fillSelect('#fKong', uniqSorted(ALL.map(r=>r.kong)), state.kong, 'ทุกกอง');
   const branchPool = state.kong ? ALL.filter(r=>r.kong===state.kong) : ALL;
-  fillSelect('#fBranch', uniqSorted(branchPool.map(r=>r.branch)), state.branch);
+  fillSelect('#fBranch', uniqSorted(branchPool.map(r=>r.branch)), state.branch, 'ทุกสาขา');
 }
 
 /* ---------------- Filtering (cross-filter, self-exclusion) ---------------- */
@@ -796,7 +808,7 @@ function renderDetail(){
   const rows = getDetailRows();
   $('#detailCount').textContent = `${fmtInt(rows.length)} รายการ`;
   const body = $('#detailBody');
-  if(!rows.length){ body.innerHTML = '<tr class="empty-row"><td colspan="7">ไม่มีข้อมูลตรงกับตัวกรองนี้</td></tr>'; return; }
+  if(!rows.length){ body.innerHTML = '<tr class="empty-row"><td colspan="8">ไม่มีข้อมูลตรงกับตัวกรองนี้</td></tr>'; return; }
   body.innerHTML = rows.map(r=>{
     const statusBadge = r.pending ? `<span class="badge pend">ยังไม่ขอเบิก</span>` : `<span class="badge billed">ขอเบิกแล้ว</span>`;
     let pendingCell = '-';
@@ -809,6 +821,7 @@ function renderDetail(){
       <td class="left">${esc(r.kong)}</td>
       <td class="left">${esc(r.branch)}</td>
       <td class="left">${esc(r.project)}</td>
+      <td class="left">${esc(r.address)}</td>
       <td class="left">${r.id}</td>
       <td class="left">${statusBadge}</td>
       <td>${pendingCell}</td>
@@ -961,8 +974,8 @@ $('#btnPdfDetail').addEventListener('click', ()=>{
   <title>รายงานตารางรายละเอียด — SLA Dashboard</title>
   <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@400;600;700&display=swap" rel="stylesheet">
   <style>${printCss}
-    td:nth-child(1),td:nth-child(2),td:nth-child(3),td:nth-child(4),td:nth-child(5),
-    th:nth-child(1),th:nth-child(2),th:nth-child(3),th:nth-child(4),th:nth-child(5){text-align:left;}
+    td:nth-child(1),td:nth-child(2),td:nth-child(3),td:nth-child(4),td:nth-child(5),td:nth-child(6),
+    th:nth-child(1),th:nth-child(2),th:nth-child(3),th:nth-child(4),th:nth-child(5),th:nth-child(6){text-align:left;}
   </style></head><body>
   <h1>รายงานตารางรายละเอียด — SLA Dashboard</h1>
   <div class="meta">ข้อมูล ณ วันที่ ${thaiDate(TODAY)} &middot; ตัวกรองที่ใช้: ${esc(filterDescText())}</div>
@@ -975,10 +988,10 @@ $('#btnPdfDetail').addEventListener('click', ()=>{
     <div>มูลค่ารวม<b>${fmtAmt(amount)} บาท</b></div>
   </div>
   <table><thead><tr>
-    <th>กอง</th><th>สาขา</th><th>โครงการ</th><th>เลขที่คำร้อง</th><th>สถานะ</th><th>วันค้างเบิกค่าจ้าง</th><th>วันขอเบิกค่าจ้างแล้ว</th><th>มูลค่า (บาท)</th>
+    <th>กอง</th><th>สาขา</th><th>โครงการ</th><th>บ้านเลขที่</th><th>เลขที่คำร้อง</th><th>สถานะ</th><th>วันค้างเบิกค่าจ้าง</th><th>วันขอเบิกค่าจ้างแล้ว</th><th>มูลค่า (บาท)</th>
   </tr></thead><tbody>
     ${rows.map(r=>`<tr class="${(r.pending && r.bucket==='60+')?'over':''}">
-      <td>${esc(r.kong)}</td><td>${esc(r.branch)}</td><td>${esc(r.project)}</td><td>${r.id}</td>
+      <td>${esc(r.kong)}</td><td>${esc(r.branch)}</td><td>${esc(r.project)}</td><td>${esc(r.address)}</td><td>${r.id}</td>
       <td>${r.pending?'ยังไม่ขอเบิก':'ขอเบิกแล้ว'}</td>
       <td>${r.pending?fmtInt(r.daysPending)+' วัน':'-'}</td>
       <td>${(!r.pending && r.daysSinceBilled!==null)?fmtInt(r.daysSinceBilled)+' วัน':'-'}</td>
@@ -995,6 +1008,7 @@ $('#btnXlsxDetail').addEventListener('click', async ()=>{
     "กอง": r.kong,
     "สาขา": r.branch,
     "โครงการ": r.project,
+    "บ้านเลขที่": r.address,
     "เลขที่คำร้อง": r.id,
     "สถานะ": r.pending ? "ยังไม่ขอเบิกค่าจ้าง" : "ขอเบิกค่าจ้างแล้ว",
     "วันที่ตรวจการจ้าง (ST11)": r.st11d ? r.st11d.toISOString().slice(0,10) : "",
@@ -1005,7 +1019,7 @@ $('#btnXlsxDetail').addEventListener('click', async ()=>{
     "มูลค่า (บาท)": r.amount
   }));
   const ws = XLSX.utils.json_to_sheet(data);
-  ws['!cols'] = [{wch:8},{wch:14},{wch:32},{wch:12},{wch:18},{wch:16},{wch:16},{wch:14},{wch:12},{wch:16},{wch:12}];
+  ws['!cols'] = [{wch:8},{wch:14},{wch:32},{wch:14},{wch:12},{wch:18},{wch:16},{wch:16},{wch:14},{wch:12},{wch:16},{wch:12}];
   await downloadXlsx(ws, 'ตารางรายละเอียด', `SLA_รายละเอียด_${TODAY.toISOString().slice(0,10)}.xlsx`);
 });
 
