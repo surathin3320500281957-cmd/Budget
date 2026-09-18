@@ -204,6 +204,43 @@ table.data tbody tr.row-overdue:hover td{background:#f9d3dd;}
   .no-print{display:none !important;}
 }
 
+/* ---------- Colored action buttons (per reference) ---------- */
+.btn-amber{background:#F5A623;border-color:#F5A623;color:#fff;}
+.btn-amber:hover{filter:brightness(1.05);}
+.btn-red{background:#E5484D;border-color:#E5484D;color:#fff;}
+.btn-red:hover{filter:brightness(1.05);}
+.btn-green{background:#1EAE63;border-color:#1EAE63;color:#fff;}
+.btn-green:hover{filter:brightness(1.05);}
+
+/* ---------- Ranking bar list (กอง / สาขา) ---------- */
+.rank-list{max-height:330px;overflow-y:auto;padding-right:4px;margin-top:8px;}
+.rank-row{display:flex;align-items:center;gap:10px;margin-bottom:10px;cursor:pointer;}
+.rank-row:last-child{margin-bottom:2px;}
+.rank-num{width:16px;flex:none;text-align:center;font-size:12.5px;font-weight:700;color:var(--text-faint);}
+.rank-track{flex:1;position:relative;height:34px;min-width:0;}
+.rank-fill{
+  position:absolute;left:0;top:0;height:100%;border-radius:17px;
+  transition:width .25s ease, opacity .15s;min-width:34px;
+}
+.rank-label{
+  position:absolute;left:6px;top:50%;transform:translateY(-50%);
+  background:rgba(124,58,237,.92);color:#fff;padding:5px 14px;border-radius:20px;
+  font-weight:700;font-size:12.5px;white-space:nowrap;max-width:calc(100% - 14px);
+  overflow:hidden;text-overflow:ellipsis;pointer-events:none;
+}
+.rank-value{
+  flex:none;min-width:56px;text-align:center;background:#152238;color:#fff;
+  padding:6px 12px;border-radius:10px;font-weight:800;font-size:12.5px;white-space:nowrap;
+}
+.rank-row.dim .rank-fill{opacity:.32;}
+.rank-row.dim .rank-label{opacity:.65;}
+.rank-row.sel .rank-track{outline:2px solid var(--blue);outline-offset:2px;border-radius:17px;}
+
+/* ---------- Compact per-table export buttons ---------- */
+.tbl-export{display:flex;gap:6px;}
+.btn-sm{padding:6px 11px;font-size:12px;border-radius:7px;gap:5px;}
+.btn-sm svg{width:13px;height:13px;}
+
 </style>
 </head>
 <body>
@@ -234,18 +271,20 @@ table.data tbody tr.row-overdue:hover td{background:#f9d3dd;}
       <input type="text" id="fSearch" placeholder="พิมพ์เพื่อค้นหา...">
     </div>
     <div class="f-field">
-      <label>เกณฑ์ค้างเกิน (วัน)</label>
-      <input type="number" id="fSla" value="30" min="1">
+      <label>ช่วงวันค้างสถานะขอเบิกค่าจ้าง</label>
+      <select id="fBucket">
+        <option value="">ทั้งหมด</option>
+        <option value="0-15">0-15 วัน</option>
+        <option value="16-30">16-30 วัน</option>
+        <option value="31-45">31-45 วัน</option>
+        <option value="46-60">46-60 วัน</option>
+        <option value="60+">เกิน 60 วัน</option>
+      </select>
     </div>
     <div class="f-spacer"></div>
-    <button class="btn ghost" id="btnReset">ล้างตัวกรอง</button>
-    <button class="btn ghost" id="btnPdf" title="เปิดแท็บเบราว์เซอร์สำหรับพิมพ์ / บันทึกเป็น PDF">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9V2h9l3 3v4"/><path d="M6 18H4a1 1 0 0 1-1-1v-6a1 1 0 0 1 1-1h16a1 1 0 0 1 1 1v6a1 1 0 0 1-1 1h-2"/><path d="M6 14h12v8H6z"/></svg>
-      PDF
-    </button>
-    <button class="btn primary" id="btnXlsx" title="ดาวน์โหลดตารางรายละเอียดที่กรองอยู่เป็น Excel">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3v12"/><path d="m7 10 5 5 5-5"/><path d="M4 19h16"/></svg>
-      Excel
+    <button class="btn btn-amber" id="btnReset">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16l-6 8v6l-4 2v-8z"/></svg>
+      ล้างตัวกรอง
     </button>
   </div>
 
@@ -279,7 +318,7 @@ table.data tbody tr.row-overdue:hover td{background:#f9d3dd;}
       <select class="metric-select" id="rankMetric">
         <option value="count">จำนวนรายการ</option>
         <option value="pending">จำนวนค้าง (ยังไม่ขอเบิก)</option>
-        <option value="avgdays">วันค้างเฉลี่ย</option>
+        <option value="avgdays">วันค้างเฉลี่ย (เฉพาะยังไม่ขอเบิก)</option>
         <option value="amount">มูลค่ารวม (บาท)</option>
       </select>
     </div>
@@ -287,12 +326,12 @@ table.data tbody tr.row-overdue:hover td{background:#f9d3dd;}
 
   <div class="chart-row">
     <div class="panel">
-      <div class="panel-hd"><h2>กอง <span class="hint">— คลิก Bar เพื่อกรอง</span></h2></div>
-      <div class="chart-box"><canvas id="kongChart"></canvas></div>
+      <div class="panel-hd"><h2>กอง <span class="hint">— คลิกแท่งเพื่อกรอง</span></h2></div>
+      <div class="rank-list" id="kongRank"></div>
     </div>
     <div class="panel">
-      <div class="panel-hd"><h2>สาขา <span class="hint">— คลิก Bar เพื่อกรอง</span></h2></div>
-      <div class="chart-box"><canvas id="branchChart"></canvas></div>
+      <div class="panel-hd"><h2>สาขา <span class="hint">— คลิกแท่งเพื่อกรอง</span></h2></div>
+      <div class="rank-list" id="branchRank"></div>
     </div>
     <div class="panel">
       <div class="panel-hd"><h2>สถานะขอเบิกค่าจ้าง</h2></div>
@@ -309,6 +348,16 @@ table.data tbody tr.row-overdue:hover td{background:#f9d3dd;}
   <div class="panel">
     <div class="panel-hd">
       <h2>ตารางสรุปตามกอง / สาขา <span class="hint">— คลิกแถวเพื่อกรอง</span></h2>
+      <div class="tbl-export no-print">
+        <button class="btn btn-red btn-sm" id="btnPdfSummary" title="เปิดแท็บเบราว์เซอร์สำหรับพิมพ์ / บันทึกเป็น PDF">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9V2h9l3 3v4"/><path d="M6 18H4a1 1 0 0 1-1-1v-6a1 1 0 0 1 1-1h16a1 1 0 0 1 1 1v6a1 1 0 0 1-1 1h-2"/><path d="M6 14h12v8H6z"/></svg>
+          Export PDF
+        </button>
+        <button class="btn btn-green btn-sm" id="btnXlsxSummary" title="ดาวน์โหลดตารางสรุปที่กรองอยู่เป็น Excel">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3v12"/><path d="m7 10 5 5 5-5"/><path d="M4 19h16"/></svg>
+          Export Excel
+        </button>
+      </div>
     </div>
     <div class="tbl-scroll">
       <table class="data" id="summaryTable">
@@ -318,10 +367,10 @@ table.data tbody tr.row-overdue:hover td{background:#f9d3dd;}
             <th data-key="branch" class="left">สาขา<span class="sort-arrow">↕</span></th>
             <th data-key="count">ทั้งหมด<span class="sort-arrow">↕</span></th>
             <th data-key="billed">ขอเบิกแล้ว<span class="sort-arrow">↕</span></th>
+            <th data-key="billedAmount">จำนวนเงิน<span class="sort-arrow">↕</span></th>
             <th data-key="pending">ยังไม่ขอเบิก<span class="sort-arrow">↕</span></th>
-            <th data-key="overdue">เกิน SLA<span class="sort-arrow">↕</span></th>
-            <th data-key="avgdays">เฉลี่ยค้าง(วัน)<span class="sort-arrow">↕</span></th>
-            <th data-key="amount">มูลค่า(บาท)<span class="sort-arrow">↕</span></th>
+            <th data-key="pendingAmount">จำนวนเงิน<span class="sort-arrow">↕</span></th>
+            <th data-key="amount">มูลค่ารวม(บาท)<span class="sort-arrow">↕</span></th>
           </tr>
         </thead>
         <tbody id="summaryBody"></tbody>
@@ -332,21 +381,31 @@ table.data tbody tr.row-overdue:hover td{background:#f9d3dd;}
   <div class="panel">
     <div class="panel-hd">
       <h2>ตารางรายละเอียด</h2>
-      <div class="hint-r" id="detailCount">–</div>
+      <div style="display:flex;align-items:center;gap:12px;">
+        <div class="hint-r" id="detailCount">–</div>
+        <div class="tbl-export no-print">
+          <button class="btn btn-red btn-sm" id="btnPdfDetail" title="เปิดแท็บเบราว์เซอร์สำหรับพิมพ์ / บันทึกเป็น PDF">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9V2h9l3 3v4"/><path d="M6 18H4a1 1 0 0 1-1-1v-6a1 1 0 0 1 1-1h16a1 1 0 0 1 1 1v6a1 1 0 0 1-1 1h-2"/><path d="M6 14h12v8H6z"/></svg>
+            Export PDF
+          </button>
+          <button class="btn btn-green btn-sm" id="btnXlsxDetail" title="ดาวน์โหลดตารางรายละเอียดที่กรองอยู่เป็น Excel">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3v12"/><path d="m7 10 5 5 5-5"/><path d="M4 19h16"/></svg>
+            Export Excel
+          </button>
+        </div>
+      </div>
     </div>
     <div class="tbl-scroll" style="max-height:520px;">
       <table class="data" id="detailTable">
         <thead>
           <tr>
-            <th data-key="id" class="left">เลขคำร้อง<span class="sort-arrow">↕</span></th>
+            <th data-key="kong" class="left">กอง<span class="sort-arrow">↕</span></th>
+            <th data-key="branch" class="left">สาขา<span class="sort-arrow">↕</span></th>
             <th data-key="project" class="left">โครงการ<span class="sort-arrow">↕</span></th>
-            <th data-key="kong">กอง<span class="sort-arrow">↕</span></th>
-            <th data-key="branch">สาขา<span class="sort-arrow">↕</span></th>
-            <th data-key="user" class="left">ผู้รับผิดชอบ<span class="sort-arrow">↕</span></th>
-            <th data-key="statusSort">สถานะ<span class="sort-arrow">↕</span></th>
-            <th data-key="st11">วันที่ตรวจการจ้าง<span class="sort-arrow">↕</span></th>
-            <th data-key="daysPendingSort">ค้าง(วัน)<span class="sort-arrow">↕</span></th>
-            <th data-key="amount">มูลค่า(บาท)<span class="sort-arrow">↕</span></th>
+            <th data-key="id" class="left">เลขที่คำร้อง<span class="sort-arrow">↕</span></th>
+            <th data-key="statusSort" class="left">สถานะ<span class="sort-arrow">↕</span></th>
+            <th data-key="daysPendingSort">วันค้างเบิกค่าจ้าง<span class="sort-arrow">↕</span></th>
+            <th data-key="daysSinceBilledSort">วันขอเบิกค่าจ้างแล้ว<span class="sort-arrow">↕</span></th>
           </tr>
         </thead>
         <tbody id="detailBody"></tbody>
@@ -421,6 +480,20 @@ function thaiDate(d){
 function fmtInt(n){ return (n===null||n===undefined||isNaN(n)) ? "-" : Math.round(n).toLocaleString('th-TH'); }
 function fmtAmt(n){ return (n===null||n===undefined||isNaN(n)) ? "-" : n.toLocaleString('th-TH'); }
 function daysBetween(a,b){ return Math.floor((a-b)/86400000); }
+
+/* ---------------- Day-range buckets (replaces the old single SLA threshold) ---------------- */
+const BUCKETS = [
+  {key:'0-15',  label:'0-15 วัน',    min:0,  max:15,       color:'#16A34A'},
+  {key:'16-30', label:'16-30 วัน',   min:16, max:30,       color:'#84A926'},
+  {key:'31-45', label:'31-45 วัน',   min:31, max:45,       color:'#F59E0B'},
+  {key:'46-60', label:'46-60 วัน',   min:46, max:60,       color:'#F0653C'},
+  {key:'60+',   label:'เกิน 60 วัน', min:61, max:Infinity, color:'#E11D48'}
+];
+function bucketOf(days){
+  for(const b of BUCKETS){ if(days>=b.min && days<=b.max) return b; }
+  return BUCKETS[BUCKETS.length-1];
+}
+function bucketByKey(key){ return BUCKETS.find(b=>b.key===key); }
 function $(sel){ return document.querySelector(sel); }
 function $all(sel){ return Array.from(document.querySelectorAll(sel)); }
 function esc(s){ return String(s==null?"":s).replace(/[&<>"']/g, c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c])); }
@@ -432,11 +505,16 @@ const TODAY = new Date(); TODAY.setHours(0,0,0,0);
 const ALL = RAW.map(r=>{
   const st11 = r.st11 ? new Date(r.st11) : null;
   const st12 = r.st12 ? new Date(r.st12) : null;
+  // ค้างสถานะขอเบิกค่าจ้าง: ST11 (ตรวจการจ้าง) -> วันนี้ นับเฉพาะรายการที่ยังไม่ถึง ST12
   const daysPending = (r.pending && st11) ? daysBetween(TODAY, st11) : null;
+  // วันขอเบิกค่าจ้างแล้ว: ST12 (ขอเบิกค่าจ้าง) -> วันนี้ นับเฉพาะรายการที่ขอเบิกแล้ว
+  const daysSinceBilled = (!r.pending && st12) ? daysBetween(TODAY, st12) : null;
   return Object.assign({}, r, {
-    st11d: st11, st12d: st12, daysPending,
+    st11d: st11, st12d: st12, daysPending, daysSinceBilled,
     daysPendingSort: r.pending ? daysPending : -1,
-    statusSort: r.pending ? 0 : 1
+    daysSinceBilledSort: (!r.pending && daysSinceBilled!==null) ? daysSinceBilled : -1,
+    statusSort: r.pending ? 0 : 1,
+    bucket: r.pending ? bucketOf(daysPending).key : null
   });
 });
 
@@ -448,10 +526,10 @@ if(typeof Chart === 'undefined'){
 
 /* ---------------- State ---------------- */
 const state = {
-  kong:"", branch:"", search:"", sla:30,
+  kong:"", branch:"", search:"", bucket:"",
   billed:null, // null=all, true=billed, false=pending
   rankMetric:"count",
-  sortSummary:{key:"count", dir:-1},
+  sortSummary:{key:"pending", dir:-1},
   sortDetail:{key:"daysPendingSort", dir:-1}
 };
 
@@ -479,6 +557,10 @@ function filterRecords(exclude){
       const isBilled = !r.pending;
       if(isBilled !== state.billed) return false;
     }
+    if(!exclude.includes('bucket') && state.bucket){
+      // ช่วงวันค้างสถานะขอเบิกค่าจ้าง ใช้ได้เฉพาะรายการที่ยังไม่ขอเบิก
+      if(!r.pending || r.bucket!==state.bucket) return false;
+    }
     if(state.search){
       const q = state.search.toLowerCase();
       const hit = String(r.id).includes(q) || (r.project||"").toLowerCase().includes(q);
@@ -496,6 +578,7 @@ function renderChips(){
   if(state.search) chips.push(['search','c-search','ค้นหา: "'+state.search+'"']);
   if(state.billed===true) chips.push(['billed','c-status','สถานะ: ขอเบิกค่าจ้างแล้ว']);
   if(state.billed===false) chips.push(['billed','c-status pending','สถานะ: ยังไม่ขอเบิกค่าจ้าง']);
+  if(state.bucket) chips.push(['bucket','c-status pending','ค้าง: '+bucketByKey(state.bucket).label]);
   const row = $('#chipRow');
   if(!chips.length){ row.innerHTML=""; return; }
   row.innerHTML = chips.map(([k,cls,label])=>
@@ -512,7 +595,7 @@ function renderKpis(){
   const totalAmt = rows.reduce((s,r)=>s+r.amount,0);
   const billedAmt = billedRows.reduce((s,r)=>s+r.amount,0);
   const pendingAmt = pendingRows.reduce((s,r)=>s+r.amount,0);
-  const overdue = pendingRows.filter(r=>r.daysPending>state.sla).length;
+  const over60 = pendingRows.filter(r=>r.bucket==='60+').length;
 
   $('#kpiAllCount').textContent = fmtInt(total);
   $('#kpiAllAmt').textContent = fmtAmt(totalAmt);
@@ -523,15 +606,15 @@ function renderKpis(){
 
   $('#kpiPendingCount').textContent = fmtInt(pendingRows.length);
   $('#kpiPendingAmt').textContent = fmtAmt(pendingAmt);
-  $('#kpiPendingSub').textContent = (total? (pendingRows.length/total*100).toFixed(1):'0.0') + `% ของทั้งหมด · เกิน SLA ${fmtInt(overdue)} รายการ`;
+  $('#kpiPendingSub').textContent = (total? (pendingRows.length/total*100).toFixed(1):'0.0') + `% ของทั้งหมด · ค้างเกิน 60 วัน ${fmtInt(over60)} รายการ`;
 
   $('#cardAll').classList.toggle('active', state.billed===null);
   $('#cardBilled').classList.toggle('active', state.billed===true);
   $('#cardPending').classList.toggle('active', state.billed===false);
 }
 
-/* ---------------- Bar charts (กอง / สาขา) ---------------- */
-let kongChart=null, branchChart=null, donutChart=null;
+/* ---------------- Ranking bar lists (กอง / สาขา) ---------------- */
+let donutChart=null;
 
 function groupMetric(rows, key){
   const m = new Map();
@@ -553,59 +636,48 @@ function metricLabelText(m){
          m==='avgdays' ? 'วันค้างเฉลี่ย' : 'มูลค่ารวม (บาท)';
 }
 
-const PALETTE = ['#2F6FED','#16A34A','#F59E0B','#7C3AED','#06B6D4','#E11D48'];
+// Rainbow palette cycling by rank, matching the reference ranking-list style.
+const PALETTE = ['#F0883E','#F0B429','#C4D93B','#4CAF50','#26A69A','#29B6F6','#3B82F6','#5C6BC0','#8B5CF6','#D946A8'];
 
-function buildBarChart(canvasId, existing, dim, excludeSelf){
-  if(typeof Chart === 'undefined') return null;
-  const rows = filterRecords(excludeSelf ? [dim] : []);
+function renderRankList(containerId, dim){
+  const el = $('#'+containerId);
+  const rows = filterRecords([dim]); // self-exclusion: this list is never filtered by its own dimension
   let groups = groupMetric(rows, dim);
   const metric = state.rankMetric;
   groups.sort((a,b)=> b[metric]-a[metric]);
+  if(!groups.length){ el.innerHTML = '<div class="chart-empty">ไม่มีข้อมูล</div>'; return; }
+
+  const maxVal = Math.max(1, ...groups.map(g=> metric==='avgdays' ? g.avgdays : g[metric]));
   const selectedVal = state[dim];
 
-  const ctx = $('#'+canvasId).getContext('2d');
-  const labels = groups.map(g=>g.label);
-  const values = groups.map(g=>metric==='avgdays'? +g.avgdays.toFixed(1) : g[metric]);
-  const colors = groups.map((g,i)=>{
-    const over = g.avgdays > state.sla && g.pending>0;
-    let base = over ? '225,29,72' : hexToRgb(PALETTE[i % PALETTE.length]);
-    const alpha = selectedVal && selectedVal!==g.label ? 0.32 : 0.95;
-    return `rgba(${base},${alpha})`;
-  });
+  el.innerHTML = groups.map((g,i)=>{
+    const val = metric==='avgdays' ? g.avgdays : g[metric];
+    const pct = Math.max(6, val/maxVal*100);
+    const color = PALETTE[i % PALETTE.length];
+    const isDim = selectedVal && selectedVal!==g.label;
+    const isSel = selectedVal===g.label;
+    const displayVal = metric==='amount' ? fmtAmt(val) : metric==='avgdays' ? val.toFixed(1) : fmtInt(val);
+    return `<div class="rank-row ${isDim?'dim':''} ${isSel?'sel':''}" data-label="${esc(g.label)}" title="${g.count} รายการ (ค้าง ${g.pending} · เฉลี่ยค้าง ${g.avgdays.toFixed(1)} วัน · ${fmtAmt(g.amount)} บาท)">
+        <div class="rank-num">${i+1}</div>
+        <div class="rank-track">
+          <div class="rank-fill" style="width:${pct}%;background:${color};"></div>
+          <div class="rank-label">${esc(g.label)}</div>
+        </div>
+        <div class="rank-value">${displayVal}</div>
+      </div>`;
+  }).join('');
 
-  if(existing) existing.destroy();
-  if(!groups.length){ return null; }
-  return new Chart(ctx, {
-    type:'bar',
-    data:{ labels, datasets:[{ label:metricLabelText(metric), data:values, backgroundColor:colors, borderRadius:6, maxBarThickness:46 }]},
-    options:{
-      responsive:true, maintainAspectRatio:false,
-      plugins:{
-        legend:{display:false},
-        tooltip:{ callbacks:{
-          label:(ctx)=>{
-            const g = groups[ctx.dataIndex];
-            return ` ${g.count} รายการ (ค้าง ${g.pending} · เฉลี่ย ${g.avgdays.toFixed(1)} วัน · ${fmtAmt(g.amount)} บาท)`;
-          }
-        }}
-      },
-      scales:{
-        x:{ grid:{display:false}, ticks:{ font:{family:"Sarabun", size:11.5}, maxRotation: dim==='branch'?55:0, minRotation: dim==='branch'?55:0 } },
-        y:{ beginAtZero:true, grid:{color:'rgba(20,30,60,.06)'}, ticks:{ font:{family:"Sarabun"} } }
-      },
-      onClick:(evt, elements)=>{
-        if(!elements.length) return;
-        const idx = elements[0].index;
-        const label = groups[idx].label;
-        state[dim] = (state[dim]===label) ? "" : label;
-        renderAll();
-      }
-    }
+  el.querySelectorAll('.rank-row').forEach(row=>{
+    row.addEventListener('click', ()=>{
+      const label = row.dataset.label;
+      state[dim] = (state[dim]===label) ? "" : label;
+      renderAll();
+    });
   });
 }
 
-function renderKongChart(){ kongChart = buildBarChart('kongChart', kongChart, 'kong', true); }
-function renderBranchChart(){ branchChart = buildBarChart('branchChart', branchChart, 'branch', true); }
+function renderKongChart(){ renderRankList('kongRank', 'kong'); }
+function renderBranchChart(){ renderRankList('branchRank', 'branch'); }
 
 /* ---------------- Donut ---------------- */
 function renderDonut(){
@@ -653,31 +725,43 @@ function renderDonut(){
   `;
 }
 
-function hexToRgb(hex){
-  const n = parseInt(hex.slice(1),16);
-  return `${(n>>16)&255},${(n>>8)&255},${n&255}`;
-}
-
 /* ---------------- Summary table ---------------- */
-function renderSummary(){
+function getSummaryRows(){
   const rows = filterRecords(['kong','branch']);
   const m = new Map();
   rows.forEach(r=>{
     const k = r.kong+'|'+r.branch;
-    if(!m.has(k)) m.set(k, {kong:r.kong, branch:r.branch, count:0, billed:0, pending:0, days:0, daysN:0, amount:0, overdue:0});
+    if(!m.has(k)) m.set(k, {
+      kong:r.kong, branch:r.branch, count:0,
+      billed:0, billedAmount:0, billedDaysSum:0, billedDaysN:0,
+      pending:0, pendingAmount:0, pendingDaysSum:0, pendingDaysN:0,
+      amount:0
+    });
     const g = m.get(k);
     g.count++; g.amount += r.amount;
-    if(r.pending){ g.pending++; g.days += r.daysPending; g.daysN++; if(r.daysPending>state.sla) g.overdue++; }
-    else g.billed++;
+    if(r.pending){
+      g.pending++; g.pendingAmount += r.amount;
+      g.pendingDaysSum += r.daysPending; g.pendingDaysN++;
+    } else {
+      g.billed++; g.billedAmount += r.amount;
+      if(r.daysSinceBilled!==null){ g.billedDaysSum += r.daysSinceBilled; g.billedDaysN++; }
+    }
   });
-  let arr = Array.from(m.values()).map(g=>Object.assign(g,{avgdays: g.daysN? g.days/g.daysN : 0}));
+  let arr = Array.from(m.values()).map(g=>Object.assign(g,{
+    billedDays: g.billedDaysN? g.billedDaysSum/g.billedDaysN : 0,
+    pendingDays: g.pendingDaysN? g.pendingDaysSum/g.pendingDaysN : 0
+  }));
   const {key,dir} = state.sortSummary;
   arr.sort((a,b)=>{
     const av=a[key], bv=b[key];
     if(typeof av==='string') return av.localeCompare(bv,'th')*dir;
     return (av-bv)*dir;
   });
+  return arr;
+}
 
+function renderSummary(){
+  const arr = getSummaryRows();
   const body = $('#summaryBody');
   if(!arr.length){ body.innerHTML = '<tr class="empty-row"><td colspan="8">ไม่มีข้อมูลตรงกับตัวกรองนี้</td></tr>'; return; }
   body.innerHTML = arr.map(g=>{
@@ -687,9 +771,9 @@ function renderSummary(){
       <td class="left">${esc(g.branch)}</td>
       <td>${fmtInt(g.count)}</td>
       <td>${fmtInt(g.billed)}</td>
+      <td>${fmtAmt(g.billedAmount)}</td>
       <td>${fmtInt(g.pending)}</td>
-      <td>${g.overdue? `<span class="badge overdue">${fmtInt(g.overdue)}</span>` : '0'}</td>
-      <td>${g.avgdays.toFixed(1)}</td>
+      <td>${fmtAmt(g.pendingAmount)}</td>
       <td>${fmtAmt(g.amount)}</td>
     </tr>`;
   }).join('');
@@ -712,21 +796,23 @@ function renderDetail(){
   const rows = getDetailRows();
   $('#detailCount').textContent = `${fmtInt(rows.length)} รายการ`;
   const body = $('#detailBody');
-  if(!rows.length){ body.innerHTML = '<tr class="empty-row"><td colspan="9">ไม่มีข้อมูลตรงกับตัวกรองนี้</td></tr>'; return; }
+  if(!rows.length){ body.innerHTML = '<tr class="empty-row"><td colspan="7">ไม่มีข้อมูลตรงกับตัวกรองนี้</td></tr>'; return; }
   body.innerHTML = rows.map(r=>{
-    const over = r.pending && r.daysPending>state.sla;
     const statusBadge = r.pending ? `<span class="badge pend">ยังไม่ขอเบิก</span>` : `<span class="badge billed">ขอเบิกแล้ว</span>`;
-    const daysCell = r.pending ? (over? `<span class="badge overdue">${fmtInt(r.daysPending)}</span>` : fmtInt(r.daysPending)) : '-';
-    return `<tr class="${over?'row-overdue':''}">
-      <td class="left">${r.id}</td>
+    let pendingCell = '-';
+    if(r.pending){
+      const b = bucketOf(r.daysPending);
+      pendingCell = `<span class="badge" style="background:${b.color};color:#fff;">${fmtInt(r.daysPending)} วัน</span>`;
+    }
+    const billedCell = (!r.pending && r.daysSinceBilled!==null) ? `${fmtInt(r.daysSinceBilled)} วัน` : '-';
+    return `<tr>
+      <td class="left">${esc(r.kong)}</td>
+      <td class="left">${esc(r.branch)}</td>
       <td class="left">${esc(r.project)}</td>
-      <td>${esc(r.kong)}</td>
-      <td>${esc(r.branch)}</td>
-      <td class="left">${esc(r.user)}</td>
-      <td>${statusBadge}</td>
-      <td>${thaiDate(r.st11d)}</td>
-      <td>${daysCell}</td>
-      <td>${fmtAmt(r.amount)}</td>
+      <td class="left">${r.id}</td>
+      <td class="left">${statusBadge}</td>
+      <td>${pendingCell}</td>
+      <td>${billedCell}</td>
     </tr>`;
   }).join('');
 }
@@ -767,14 +853,10 @@ function renderAll(skipDropdowns){
 $('#fKong').addEventListener('change', e=>{ state.kong = e.target.value; state.branch=""; renderAll(); });
 $('#fBranch').addEventListener('change', e=>{ state.branch = e.target.value; renderAll(); });
 $('#fSearch').addEventListener('input', e=>{ state.search = e.target.value.trim(); renderAll(true); });
-$('#fSla').addEventListener('input', e=>{
-  const v = parseInt(e.target.value,10);
-  state.sla = isNaN(v)||v<1 ? 30 : v;
-  renderAll(true);
-});
+$('#fBucket').addEventListener('change', e=>{ state.bucket = e.target.value; renderAll(true); });
 $('#btnReset').addEventListener('click', ()=>{
-  state.kong=""; state.branch=""; state.search=""; state.billed=null;
-  $('#fSearch').value="";
+  state.kong=""; state.branch=""; state.search=""; state.billed=null; state.bucket="";
+  $('#fSearch').value=""; $('#fBucket').value="";
   renderAll();
 });
 $('#chipRow').addEventListener('click', e=>{
@@ -783,6 +865,7 @@ $('#chipRow').addEventListener('click', e=>{
   const k = chip.dataset.clear;
   if(k==='search'){ state.search=""; $('#fSearch').value=""; }
   else if(k==='billed'){ state.billed=null; }
+  else if(k==='bucket'){ state.bucket=""; $('#fBucket').value=""; }
   else state[k]="";
   renderAll();
 });
@@ -814,100 +897,25 @@ $('#donutLegend').addEventListener('click', e=>{
 wireSortable('#summaryTable', 'sortSummary');
 wireSortable('#detailTable', 'sortDetail');
 
-/* ---------------- Export: PDF (print tab) ---------------- */
-$('#btnPdf').addEventListener('click', ()=>{
-  const rows = getDetailRows();
-  const filterDesc = [
-    state.kong && `กอง: ${state.kong}`,
-    state.branch && `สาขา: ${state.branch}`,
-    state.billed===true && `สถานะ: ขอเบิกค่าจ้างแล้ว`,
-    state.billed===false && `สถานะ: ยังไม่ขอเบิกค่าจ้าง`,
-    state.search && `ค้นหา: "${state.search}"`
-  ].filter(Boolean).join(' · ') || 'ไม่มีตัวกรอง (แสดงทั้งหมด)';
-
-  const amount = rows.reduce((s,r)=>s+r.amount,0);
-  const pendingRows = rows.filter(r=>r.pending);
-  const avg = pendingRows.length ? pendingRows.reduce((s,r)=>s+r.daysPending,0)/pendingRows.length : 0;
-  const over = pendingRows.filter(r=>r.daysPending>state.sla).length;
-
-  const html = `<!DOCTYPE html><html lang="th"><head><meta charset="UTF-8">
-  <title>รายงาน SLA Dashboard</title>
-  <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@400;600;700&display=swap" rel="stylesheet">
-  <style>
-    body{font-family:'Sarabun',sans-serif;font-size:12px;color:#1B2334;margin:24px;}
-    h1{font-size:17px;margin:0 0 4px;}
-    .meta{color:#5C6579;font-size:11.5px;margin-bottom:14px;}
-    .summary{display:flex;gap:18px;margin-bottom:16px;flex-wrap:wrap;}
-    .summary div{background:#EEF1F9;border-radius:8px;padding:8px 12px;}
-    .summary b{display:block;font-size:15px;}
-    table{width:100%;border-collapse:collapse;font-size:10.5px;}
-    th,td{border:1px solid #E2E6F0;padding:5px 6px;text-align:right;}
-    th{background:#1B3FBF;color:#fff;}
-    td:nth-child(1),td:nth-child(2),td:nth-child(5),td:nth-child(6),th:nth-child(1),th:nth-child(2),th:nth-child(5),th:nth-child(6){text-align:left;}
-    tr.over td{background:#FDE7EC;}
-    @media print{ @page{ size:A4 landscape; margin:12mm; } }
-  </style></head><body>
-  <h1>รายงาน SLA Dashboard — ติดตามงานขอเบิกค่าจ้าง</h1>
-  <div class="meta">ข้อมูล ณ วันที่ ${thaiDate(TODAY)} &middot; ตัวกรองที่ใช้: ${esc(filterDesc)} &middot; เกณฑ์ SLA: ${state.sla} วัน</div>
-  <div class="summary">
-    <div>จำนวนรายการ<b>${fmtInt(rows.length)}</b></div>
-    <div>ขอเบิกแล้ว<b>${fmtInt(rows.length-pendingRows.length)}</b></div>
-    <div>ยังไม่ขอเบิก<b>${fmtInt(pendingRows.length)}</b></div>
-    <div>วันค้างเฉลี่ย (เฉพาะยังไม่ขอเบิก)<b>${avg.toFixed(1)} วัน</b></div>
-    <div>เกินเกณฑ์ SLA<b>${fmtInt(over)} รายการ</b></div>
-    <div>มูลค่ารวม<b>${fmtAmt(amount)} บาท</b></div>
-  </div>
-  <table><thead><tr>
-    <th>เลขคำร้อง</th><th>โครงการ</th><th>กอง</th><th>สาขา</th><th>ผู้รับผิดชอบ</th><th>สถานะ</th><th>วันที่ตรวจการจ้าง</th><th>ค้าง (วัน)</th><th>มูลค่า (บาท)</th>
-  </tr></thead><tbody>
-    ${rows.map(r=>`<tr class="${(r.pending && r.daysPending>state.sla)?'over':''}">
-      <td>${r.id}</td><td>${esc(r.project)}</td><td>${esc(r.kong)}</td><td>${esc(r.branch)}</td>
-      <td>${esc(r.user)}</td><td>${r.pending?'ยังไม่ขอเบิก':'ขอเบิกแล้ว'}</td><td>${thaiDate(r.st11d)}</td>
-      <td>${r.pending?fmtInt(r.daysPending):'-'}</td><td>${fmtAmt(r.amount)}</td>
-    </tr>`).join('')}
-  </tbody></table>
-  </body></html>`;
-
+/* ---------------- Shared export helpers ---------------- */
+function openPrintWindow(html){
   const win = window.open('', '_blank');
   if(!win){ alert('เบราว์เซอร์บล็อกการเปิดแท็บใหม่ กรุณาอนุญาตป๊อปอัปสำหรับหน้านี้'); return; }
   win.document.open(); win.document.write(html); win.document.close();
   win.addEventListener('load', ()=>{ setTimeout(()=>win.print(), 300); });
-});
-
-/* ---------------- Export: Excel ---------------- */
-$('#btnXlsx').addEventListener('click', async ()=>{
+}
+async function downloadXlsx(ws, sheetName, filename){
   if(typeof XLSX === 'undefined'){
     alert('ไม่สามารถโหลดไลบรารีสำหรับสร้างไฟล์ Excel ได้ในหน้านี้ กรุณาลองรีเฟรชหน้าใหม่');
     return;
   }
-  const rows = getDetailRows();
-  const data = rows.map(r=>({
-    "เลขคำร้อง": r.id,
-    "โครงการ": r.project,
-    "กอง": r.kong,
-    "สาขา": r.branch,
-    "ผู้รับผิดชอบ": r.user,
-    "สถานะ": r.pending ? "ยังไม่ขอเบิกค่าจ้าง" : "ขอเบิกค่าจ้างแล้ว",
-    "วันที่ตรวจการจ้าง (ST11)": r.st11d ? r.st11d.toISOString().slice(0,10) : "",
-    "วันที่ขอเบิกค่าจ้าง (ST12)": r.st12d ? r.st12d.toISOString().slice(0,10) : "",
-    "จำนวนวันค้าง": r.pending ? r.daysPending : "",
-    "เกินเกณฑ์ SLA": r.pending ? (r.daysPending>state.sla ? "ใช่" : "ไม่") : "",
-    "มูลค่า (บาท)": r.amount
-  }));
-  const ws = XLSX.utils.json_to_sheet(data);
-  ws['!cols'] = [{wch:12},{wch:32},{wch:8},{wch:14},{wch:20},{wch:18},{wch:16},{wch:16},{wch:12},{wch:12},{wch:12}];
   const wb = XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(wb, ws, "SLA Dashboard");
+  XLSX.utils.book_append_sheet(wb, ws, sheetName);
   const buf = XLSX.write(wb, {type:'array', bookType:'xlsx'});
   const blob = new Blob([buf], {type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'});
-  const filename = `SLA_Dashboard_${TODAY.toISOString().slice(0,10)}.xlsx`;
-
   try{
     const downloads = await (window.claude && window.claude.use ? window.claude.use('downloads') : Promise.resolve(null));
-    if(downloads){
-      await downloads.save({filename, data: blob});
-      return;
-    }
+    if(downloads){ await downloads.save({filename, data: blob}); return; }
   }catch(err){
     if(err && err.code === 'declined') return;
     console.warn('downloads capability failed, falling back', err);
@@ -917,6 +925,141 @@ $('#btnXlsx').addEventListener('click', async ()=>{
   a.href = url; a.download = filename;
   document.body.appendChild(a); a.click(); a.remove();
   setTimeout(()=>URL.revokeObjectURL(url), 4000);
+}
+function filterDescText(){
+  return [
+    state.kong && `กอง: ${state.kong}`,
+    state.branch && `สาขา: ${state.branch}`,
+    state.billed===true && `สถานะ: ขอเบิกค่าจ้างแล้ว`,
+    state.billed===false && `สถานะ: ยังไม่ขอเบิกค่าจ้าง`,
+    state.bucket && `ช่วงวันค้าง: ${bucketByKey(state.bucket).label}`,
+    state.search && `ค้นหา: "${state.search}"`
+  ].filter(Boolean).join(' · ') || 'ไม่มีตัวกรอง (แสดงทั้งหมด)';
+}
+const printCss = `
+    body{font-family:'Sarabun',sans-serif;font-size:12px;color:#1B2334;margin:24px;}
+    h1{font-size:17px;margin:0 0 4px;}
+    .meta{color:#5C6579;font-size:11.5px;margin-bottom:14px;}
+    .summary{display:flex;gap:18px;margin-bottom:16px;flex-wrap:wrap;}
+    .summary div{background:#EEF1F9;border-radius:8px;padding:8px 12px;}
+    .summary b{display:block;font-size:15px;}
+    table{width:100%;border-collapse:collapse;font-size:10.5px;}
+    th,td{border:1px solid #E2E6F0;padding:5px 6px;text-align:right;}
+    th{background:#1B3FBF;color:#fff;}
+    tr.over td{background:#FDE7EC;}
+    @media print{ @page{ size:A4 landscape; margin:12mm; } }`;
+
+/* ---------------- Export: ตารางรายละเอียด ---------------- */
+$('#btnPdfDetail').addEventListener('click', ()=>{
+  const rows = getDetailRows();
+  const amount = rows.reduce((s,r)=>s+r.amount,0);
+  const pendingRows = rows.filter(r=>r.pending);
+  const avg = pendingRows.length ? pendingRows.reduce((s,r)=>s+r.daysPending,0)/pendingRows.length : 0;
+  const over60 = pendingRows.filter(r=>r.bucket==='60+').length;
+
+  const html = `<!DOCTYPE html><html lang="th"><head><meta charset="UTF-8">
+  <title>รายงานตารางรายละเอียด — SLA Dashboard</title>
+  <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@400;600;700&display=swap" rel="stylesheet">
+  <style>${printCss}
+    td:nth-child(1),td:nth-child(2),td:nth-child(3),td:nth-child(4),td:nth-child(5),
+    th:nth-child(1),th:nth-child(2),th:nth-child(3),th:nth-child(4),th:nth-child(5){text-align:left;}
+  </style></head><body>
+  <h1>รายงานตารางรายละเอียด — SLA Dashboard</h1>
+  <div class="meta">ข้อมูล ณ วันที่ ${thaiDate(TODAY)} &middot; ตัวกรองที่ใช้: ${esc(filterDescText())}</div>
+  <div class="summary">
+    <div>จำนวนรายการ<b>${fmtInt(rows.length)}</b></div>
+    <div>ขอเบิกแล้ว<b>${fmtInt(rows.length-pendingRows.length)}</b></div>
+    <div>ยังไม่ขอเบิก<b>${fmtInt(pendingRows.length)}</b></div>
+    <div>วันค้างเฉลี่ย (เฉพาะยังไม่ขอเบิก)<b>${avg.toFixed(1)} วัน</b></div>
+    <div>ค้างเกิน 60 วัน<b>${fmtInt(over60)} รายการ</b></div>
+    <div>มูลค่ารวม<b>${fmtAmt(amount)} บาท</b></div>
+  </div>
+  <table><thead><tr>
+    <th>กอง</th><th>สาขา</th><th>โครงการ</th><th>เลขที่คำร้อง</th><th>สถานะ</th><th>วันค้างเบิกค่าจ้าง</th><th>วันขอเบิกค่าจ้างแล้ว</th><th>มูลค่า (บาท)</th>
+  </tr></thead><tbody>
+    ${rows.map(r=>`<tr class="${(r.pending && r.bucket==='60+')?'over':''}">
+      <td>${esc(r.kong)}</td><td>${esc(r.branch)}</td><td>${esc(r.project)}</td><td>${r.id}</td>
+      <td>${r.pending?'ยังไม่ขอเบิก':'ขอเบิกแล้ว'}</td>
+      <td>${r.pending?fmtInt(r.daysPending)+' วัน':'-'}</td>
+      <td>${(!r.pending && r.daysSinceBilled!==null)?fmtInt(r.daysSinceBilled)+' วัน':'-'}</td>
+      <td>${fmtAmt(r.amount)}</td>
+    </tr>`).join('')}
+  </tbody></table>
+  </body></html>`;
+  openPrintWindow(html);
+});
+
+$('#btnXlsxDetail').addEventListener('click', async ()=>{
+  const rows = getDetailRows();
+  const data = rows.map(r=>({
+    "กอง": r.kong,
+    "สาขา": r.branch,
+    "โครงการ": r.project,
+    "เลขที่คำร้อง": r.id,
+    "สถานะ": r.pending ? "ยังไม่ขอเบิกค่าจ้าง" : "ขอเบิกค่าจ้างแล้ว",
+    "วันที่ตรวจการจ้าง (ST11)": r.st11d ? r.st11d.toISOString().slice(0,10) : "",
+    "วันที่ขอเบิกค่าจ้าง (ST12)": r.st12d ? r.st12d.toISOString().slice(0,10) : "",
+    "วันค้างเบิกค่าจ้าง": r.pending ? r.daysPending : "",
+    "ช่วงวันค้าง": r.pending ? bucketOf(r.daysPending).label : "",
+    "วันขอเบิกค่าจ้างแล้ว": (!r.pending && r.daysSinceBilled!==null) ? r.daysSinceBilled : "",
+    "มูลค่า (บาท)": r.amount
+  }));
+  const ws = XLSX.utils.json_to_sheet(data);
+  ws['!cols'] = [{wch:8},{wch:14},{wch:32},{wch:12},{wch:18},{wch:16},{wch:16},{wch:14},{wch:12},{wch:16},{wch:12}];
+  await downloadXlsx(ws, 'ตารางรายละเอียด', `SLA_รายละเอียด_${TODAY.toISOString().slice(0,10)}.xlsx`);
+});
+
+/* ---------------- Export: ตารางสรุป ---------------- */
+$('#btnPdfSummary').addEventListener('click', ()=>{
+  const arr = getSummaryRows();
+  const totals = arr.reduce((a,g)=>({
+    count:a.count+g.count, billed:a.billed+g.billed, billedAmount:a.billedAmount+g.billedAmount,
+    pending:a.pending+g.pending, pendingAmount:a.pendingAmount+g.pendingAmount, amount:a.amount+g.amount
+  }), {count:0,billed:0,billedAmount:0,pending:0,pendingAmount:0,amount:0});
+
+  const html = `<!DOCTYPE html><html lang="th"><head><meta charset="UTF-8">
+  <title>รายงานตารางสรุป — SLA Dashboard</title>
+  <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@400;600;700&display=swap" rel="stylesheet">
+  <style>${printCss}
+    td:nth-child(1),td:nth-child(2),th:nth-child(1),th:nth-child(2){text-align:left;}
+  </style></head><body>
+  <h1>รายงานตารางสรุปตามกอง / สาขา — SLA Dashboard</h1>
+  <div class="meta">ข้อมูล ณ วันที่ ${thaiDate(TODAY)} &middot; ตัวกรองที่ใช้: ${esc(filterDescText())}</div>
+  <div class="summary">
+    <div>จำนวนรายการ<b>${fmtInt(totals.count)}</b></div>
+    <div>ขอเบิกแล้ว<b>${fmtInt(totals.billed)} (${fmtAmt(totals.billedAmount)} บาท)</b></div>
+    <div>ยังไม่ขอเบิก<b>${fmtInt(totals.pending)} (${fmtAmt(totals.pendingAmount)} บาท)</b></div>
+    <div>มูลค่ารวม<b>${fmtAmt(totals.amount)} บาท</b></div>
+  </div>
+  <table><thead><tr>
+    <th>กอง</th><th>สาขา</th><th>ทั้งหมด</th><th>ขอเบิกแล้ว</th><th>จำนวนเงิน</th><th>ยังไม่ขอเบิก</th><th>จำนวนเงิน</th><th>มูลค่ารวม(บาท)</th>
+  </tr></thead><tbody>
+    ${arr.map(g=>`<tr>
+      <td>${esc(g.kong)}</td><td>${esc(g.branch)}</td><td>${fmtInt(g.count)}</td>
+      <td>${fmtInt(g.billed)}</td><td>${fmtAmt(g.billedAmount)}</td>
+      <td>${fmtInt(g.pending)}</td><td>${fmtAmt(g.pendingAmount)}</td>
+      <td>${fmtAmt(g.amount)}</td>
+    </tr>`).join('')}
+  </tbody></table>
+  </body></html>`;
+  openPrintWindow(html);
+});
+
+$('#btnXlsxSummary').addEventListener('click', async ()=>{
+  const arr = getSummaryRows();
+  const data = arr.map(g=>({
+    "กอง": g.kong,
+    "สาขา": g.branch,
+    "ทั้งหมด": g.count,
+    "ขอเบิกแล้ว": g.billed,
+    "จำนวนเงิน (ขอเบิกแล้ว)": g.billedAmount,
+    "ยังไม่ขอเบิก": g.pending,
+    "จำนวนเงิน (ยังไม่ขอเบิก)": g.pendingAmount,
+    "มูลค่ารวม (บาท)": g.amount
+  }));
+  const ws = XLSX.utils.json_to_sheet(data);
+  ws['!cols'] = [{wch:8},{wch:14},{wch:10},{wch:12},{wch:16},{wch:12},{wch:16},{wch:16}];
+  await downloadXlsx(ws, 'ตารางสรุป', `SLA_สรุป_${TODAY.toISOString().slice(0,10)}.xlsx`);
 });
 
 /* ---------------- Init ---------------- */
