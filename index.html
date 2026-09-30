@@ -6,141 +6,205 @@
 <title>แดชบอร์ดติดตามสถานะเบิกค่าซ่อม (SLA)</title>
 <style>
 :root{
-  --bg:#0f1420; --panel:#161d2e; --panel2:#1b2436; --border:#2a3550;
-  --text:#eef2f9; --muted:#8b96ad; --accent:#4f8cff;
-  --green:#3ddc97; --amber:#ffb84f; --red:#ff6b6b;
-  --mb:#F0883E; --tb1:#F0B429; --tb2:#C4D93B;
-  --radius:14px;
+  --bg:#f3f4f8; --card:#ffffff; --border:#e4e8f2;
+  --text:#1f2937; --muted:#78829a;
+  --blue:#2f6fed; --purple:#8b5cf6; --pink:#ef4d6b;
+  --green:#16a34a; --amber:#f59e0b;
+  --mb:#F0883E; --tb1:#8B5CF6; --tb2:#C4D93B;
+  --radius:12px;
+  --shadow:0 2px 10px rgba(31,41,55,0.06), 0 1px 2px rgba(31,41,55,0.04);
 }
 *{box-sizing:border-box;}
 body{
-  margin:0; font-family:'Segoe UI',"Noto Sans Thai","Sarabun",sans-serif;
-  background:linear-gradient(160deg,#0b101c 0%,#121a2c 55%,#0b101c 100%);
+  margin:0; font-family:"Sarabun","Noto Sans Thai",'Segoe UI',"Leelawadee UI",Tahoma,sans-serif;
+  background:var(--bg);
   color:var(--text); min-height:100vh; padding:20px;
 }
-.wrap{max-width:1400px;margin:0 auto;}
+.wrap{max-width:1500px;margin:0 auto;}
 .topbar{
   display:flex; justify-content:space-between; align-items:flex-start;
-  flex-wrap:wrap; gap:14px; margin-bottom:22px;
+  flex-wrap:wrap; gap:14px; margin-bottom:18px;
 }
-.topbar h1{font-size:24px;margin:0 0 4px;letter-spacing:.3px;}
+.topbar h1{font-size:23px;margin:0 0 4px;letter-spacing:.2px;color:#111827;}
 .topbar .sub{color:var(--muted);font-size:13.5px;}
 .date-pills{display:flex;gap:10px;flex-wrap:wrap;}
 .pill-badge{
-  background:var(--panel2);border:1px solid var(--border);border-radius:999px;
+  background:var(--card);border:1px solid var(--border);border-radius:999px;
   padding:7px 14px;font-size:12.5px;color:var(--muted);display:flex;align-items:center;gap:6px;
+  box-shadow:var(--shadow);
 }
-.pill-badge b{color:var(--text);font-weight:600;}
+.pill-badge b{color:var(--text);font-weight:700;}
 
 .filters{
-  display:flex;flex-wrap:wrap;gap:10px;background:var(--panel);
-  border:1px solid var(--border);border-radius:var(--radius);padding:14px;margin-bottom:20px;
+  display:flex;flex-wrap:wrap;gap:10px;background:var(--card);
+  border:1px solid var(--border);border-radius:var(--radius);padding:14px;margin-bottom:14px;
+  box-shadow:var(--shadow);
 }
 .filters select, .filters input[type=text]{
-  appearance:none;-webkit-appearance:none;background:var(--panel2) url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='10' height='6'><path d='M0 0 L5 6 L10 0 Z' fill='%238b96ad'/></svg>") no-repeat right 12px center;
+  appearance:none;-webkit-appearance:none;background:#f6f7fb url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='10' height='6'><path d='M0 0 L5 6 L10 0 Z' fill='%2378829a'/></svg>") no-repeat right 12px center;
   border:1px solid var(--border);color:var(--text);border-radius:999px;
-  padding:9px 32px 9px 16px;font-size:13px;min-width:140px;cursor:pointer;outline:none;
+  padding:8px 30px 8px 14px;font-size:12.5px;min-width:120px;cursor:pointer;outline:none;
 }
-.filters input[type=text]{background:var(--panel2);min-width:200px;padding:9px 16px;cursor:text;}
-.filters select:hover, .filters input:hover{border-color:var(--accent);}
+.filters input[type=text]{background:#f6f7fb;min-width:200px;flex:1 1 200px;padding:8px 14px;cursor:text;}
+.filters select:hover, .filters input:hover{border-color:var(--blue);}
+.filters select.on, .filters input[type=text].on{
+  background:var(--fc) url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='10' height='6'><path d='M0 0 L5 6 L10 0 Z' fill='%23ffffff'/></svg>") no-repeat right 12px center;
+  border-color:var(--fc);color:#fff;font-weight:700;
+  box-shadow:0 0 0 3px color-mix(in srgb, var(--fc) 25%, transparent), 0 2px 6px rgba(0,0,0,.12);
+}
+.filters input[type=text].on{background:var(--fc);}
+.filters input[type=text].on::placeholder{color:rgba(255,255,255,.8);}
+.filters select.on option{background:#fff;color:#1f2937;font-weight:400;}
 .filters .clear-btn{
-  background:transparent;border:1px solid var(--border);color:var(--muted);
-  border-radius:999px;padding:9px 16px;font-size:13px;cursor:pointer;
+  background:#fff0f1;border:1px solid #ffd7db;color:var(--pink);
+  border-radius:999px;padding:8px 16px;font-size:12.5px;cursor:pointer;font-weight:600;
 }
-.filters .clear-btn:hover{color:var(--text);border-color:var(--red);}
+.filters .clear-btn:hover{background:var(--pink);color:#fff;}
 
-.kpis{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-bottom:20px;}
+.active-chips{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:16px;min-height:0;}
+.active-chip{
+  --fc:#16a34a;
+  display:flex;align-items:center;gap:8px;background:var(--fc);border:1px solid var(--fc);
+  color:#fff;border-radius:999px;padding:7px 8px 7px 14px;font-size:12.5px;font-weight:700;
+  box-shadow:0 2px 6px color-mix(in srgb, var(--fc) 35%, transparent);
+}
+.active-chip .x{
+  width:18px;height:18px;border-radius:50%;background:rgba(255,255,255,0.25);
+  display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:12px;line-height:1;
+}
+.active-chip .x:hover{background:rgba(255,255,255,0.45);}
+
+.kpis{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-bottom:14px;}
 .kpi-card{
-  background:var(--panel);border:1px solid var(--border);border-radius:var(--radius);
-  padding:18px 20px;position:relative;overflow:hidden;
+  background:var(--card);border:1.5px solid var(--border);border-left:5px solid transparent;
+  border-radius:12px;padding:16px 18px;position:relative;box-shadow:var(--shadow);
+  cursor:pointer;transition:box-shadow .15s, border-color .15s;
 }
-.kpi-card::before{
-  content:'';position:absolute;top:0;left:0;right:0;height:3px;
+.kpi-card:hover{box-shadow:0 4px 16px rgba(31,41,55,0.1);}
+.kpi-card.all{border-left-color:var(--blue);}
+.kpi-card.billed{border-left-color:var(--purple);}
+.kpi-card.pending{border-left-color:#e11d48;}
+.kpi-card.all.active{border-color:var(--blue);border-left-color:var(--blue);}
+.kpi-card.billed.active{border-color:var(--purple);border-left-color:var(--purple);}
+.kpi-card.pending.active{border-color:#e11d48;border-left-color:#e11d48;}
+.kpi-head{display:flex;align-items:center;gap:10px;margin-bottom:12px;}
+.kpi-icon{
+  width:30px;height:30px;border-radius:8px;display:flex;align-items:center;justify-content:center;flex:0 0 auto;
 }
-.kpi-card.all::before{background:var(--accent);}
-.kpi-card.billed::before{background:var(--green);}
-.kpi-card.pending::before{background:var(--amber);}
-.kpi-label{color:var(--muted);font-size:13px;margin-bottom:6px;}
-.kpi-value{font-size:30px;font-weight:800;margin-bottom:2px;}
+.kpi-icon svg{width:16px;height:16px;display:block;}
+.kpi-card.all .kpi-icon{background:#eceefe;}
+.kpi-card.billed .kpi-icon{background:#e3f6e9;}
+.kpi-card.pending .kpi-icon{background:#fde8ec;}
+.kpi-label{color:#374151;font-size:13.5px;font-weight:700;}
+.kpi-value{font-size:30px;font-weight:800;line-height:1.1;margin-bottom:4px;}
+.kpi-card.all .kpi-value{color:var(--blue);}
+.kpi-card.billed .kpi-value{color:var(--green);}
+.kpi-card.pending .kpi-value{color:#e11d48;}
 .kpi-amount{color:var(--muted);font-size:13px;}
-.kpi-amount b{color:var(--text);}
-.kpi-breakdown{margin-top:12px;padding-top:12px;border-top:1px dashed var(--border);}
-.kpi-breakdown .bk-title{font-size:11.5px;color:var(--muted);margin-bottom:6px;}
-.chip-row{display:flex;flex-wrap:wrap;gap:6px;}
-.chip{
-  background:var(--panel2);border:1px solid var(--border);border-radius:999px;
-  padding:4px 10px;font-size:11.5px;color:var(--text);cursor:pointer;
-}
-.chip:hover{border-color:var(--accent);}
-.chip.active{background:var(--accent);border-color:var(--accent);color:#fff;}
-.chip .n{color:var(--muted);margin-left:4px;}
-.chip.active .n{color:#dbe6ff;}
+.kpi-amount b{color:var(--text);font-weight:700;}
+.kpi-insight{margin-top:6px;font-size:12px;font-weight:500;color:var(--muted);}
 
-.grid2{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:20px;}
+.metric-row{display:flex;justify-content:flex-end;align-items:center;gap:10px;margin-bottom:12px;font-size:12.5px;color:var(--muted);}
+.metric-row select{
+  appearance:none;-webkit-appearance:none;background:var(--card) url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='12' height='8'><path d='M1 1 L6 6 L11 1' stroke='%23374151' stroke-width='1.6' fill='none'/></svg>") no-repeat right 10px center;
+  border:1px solid var(--border);color:var(--text);border-radius:6px;padding:7px 34px 7px 12px;font-size:13px;min-width:180px;cursor:pointer;
+}
+
+.grid3{display:grid;grid-template-columns:1fr 1.3fr 1fr;gap:16px;margin-bottom:18px;align-items:stretch;}
 .panel{
-  background:var(--panel);border:1px solid var(--border);border-radius:var(--radius);
-  padding:18px 20px;
+  background:var(--card);border:1px solid var(--border);border-radius:12px;
+  padding:16px 18px;box-shadow:var(--shadow);
 }
-.panel h3{margin:0 0 14px;font-size:14.5px;color:var(--text);display:flex;align-items:center;gap:8px;}
-.panel h3 .tag{font-size:11px;color:var(--muted);font-weight:400;}
+.panel h3{margin:0 0 14px;font-size:14.5px;color:#111827;font-weight:800;}
+.panel h3 .tag{font-size:11.5px;color:var(--muted);font-weight:500;margin-left:4px;}
 
-.rank-row{margin-bottom:12px;}
+.rank-list{display:flex;flex-direction:column;gap:10px;}
+.rank-row{display:flex;align-items:center;gap:10px;cursor:pointer;}
 .rank-row.dim{opacity:.35;}
-.rank-label-row{display:flex;justify-content:space-between;font-size:12.5px;margin-bottom:4px;}
-.rank-label{color:var(--text);}
-.rank-value{color:var(--muted);}
-.rank-track{background:var(--panel2);border-radius:999px;height:10px;overflow:hidden;}
-.rank-fill{height:100%;border-radius:999px;transition:width .3s;}
+.rank-num{width:16px;flex:0 0 auto;color:#374151;font-weight:600;font-size:12.5px;text-align:center;}
+.rank-track{flex:1 1 auto;min-width:0;}
+.rank-badge{
+  display:flex;align-items:center;max-width:100%;
+  border-radius:999px;padding:4px;white-space:nowrap;overflow:hidden;
+  transition:width .25s;
+}
+.rank-label-badge{
+  display:inline-block;background:#8b5cf6;color:#fff;
+  padding:4px 12px;border-radius:999px;font-weight:700;font-size:12px;
+  overflow:hidden;text-overflow:ellipsis;max-width:100%;
+}
+.rank-value{
+  flex:0 0 auto;background:#1f2a44;color:#fff;font-weight:700;font-size:12.5px;
+  border-radius:6px;padding:6px 10px;min-width:36px;text-align:center;
+}
 
-.donut-wrap{display:flex;align-items:center;gap:18px;}
-.donut-canvas-box{flex:0 0 200px;height:200px;position:relative;}
-.donut-legend{flex:1;display:flex;flex-direction:column;gap:10px;}
-.legend-item{display:flex;align-items:center;gap:8px;font-size:13px;}
-.legend-dot{width:10px;height:10px;border-radius:3px;flex:0 0 auto;}
-.legend-item .lv{margin-left:auto;color:var(--muted);}
+.donut-wrap{display:flex;flex-direction:column;align-items:center;gap:12px;}
+.donut-canvas-box{width:100%;max-width:260px;height:230px;position:relative;}
+.donut-legend{display:flex;flex-wrap:wrap;justify-content:center;gap:6px 16px;width:100%;}
+.legend-item{display:flex;align-items:center;gap:6px;font-size:12px;color:#374151;font-weight:600;}
+.legend-dot{width:10px;height:10px;border-radius:2px;flex:0 0 auto;}
+.legend-item .lv{color:#374151;font-weight:600;}
 
-.dq-note{background:#2a2410;border:1px solid #4a3f18;border-radius:12px;padding:12px 16px;margin-bottom:20px;font-size:13px;color:#ffd685;}
+.dq-note{background:#fff8e6;border:1px solid #fbe3a8;border-radius:12px;padding:12px 16px;margin-bottom:16px;font-size:13px;color:#8a5b00;}
 .dq-note .dq-head{display:flex;justify-content:space-between;align-items:center;cursor:pointer;}
-.dq-note .dq-body{margin-top:8px;color:#e8cf9a;display:none;}
+.dq-note .dq-body{margin-top:8px;color:#8a5b00;display:none;}
 .dq-note.open .dq-body{display:block;}
-.dq-note button.dq-toggle{background:transparent;border:1px solid #4a3f18;color:#ffd685;border-radius:8px;padding:4px 10px;font-size:12px;cursor:pointer;}
+.dq-note button.dq-toggle{background:#fff;border:1px solid #fbe3a8;color:#8a5b00;border-radius:8px;padding:4px 10px;font-size:12px;cursor:pointer;}
 
-.table-section{background:var(--panel);border:1px solid var(--border);border-radius:var(--radius);padding:18px 20px;margin-bottom:20px;}
+.table-section{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:18px 20px;margin-bottom:18px;box-shadow:var(--shadow);}
 .table-head{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;margin-bottom:14px;}
-.table-head h3{margin:0;font-size:15.5px;}
+.table-head h3{margin:0;font-size:15.5px;color:#111827;}
 .export-btns{display:flex;gap:8px;}
 .export-btns button{
-  background:var(--panel2);border:1px solid var(--border);color:var(--text);
-  border-radius:8px;padding:7px 14px;font-size:12.5px;cursor:pointer;display:flex;align-items:center;gap:6px;
+  border:none;color:#fff;border-radius:9px;padding:8px 16px;font-size:12.5px;cursor:pointer;
+  display:flex;align-items:center;gap:6px;font-weight:700;
 }
-.export-btns button:hover{border-color:var(--accent);color:var(--accent);}
+.export-btns button.pdf{background:#e6483a;}
+.export-btns button.pdf:hover{background:#cf3a2d;}
+.export-btns button.xlsx{background:#1aa260;}
+.export-btns button.xlsx:hover{background:#158a51;}
 .table-scroll{overflow-x:auto;}
 table.data{width:100%;border-collapse:collapse;font-size:12.8px;}
-table.data th, table.data td{padding:9px 10px;text-align:right;border-bottom:1px solid var(--border);white-space:nowrap;}
+table.data th, table.data td{padding:10px 11px;text-align:right;border-bottom:1px solid var(--border);white-space:nowrap;}
 table.data th.left, table.data td.left{text-align:left;white-space:normal;}
-table.data thead th{color:var(--muted);font-weight:600;position:sticky;top:0;background:var(--panel);font-size:12px;cursor:pointer;user-select:none;}
-table.data.no-sort thead th{cursor:default;}
-table.data thead th .arrow{font-size:10px;color:var(--muted);margin-left:3px;}
-table.data tbody tr:hover{background:var(--panel2);}
+table.data thead th{font-weight:700;position:sticky;top:0;font-size:12px;cursor:pointer;user-select:none;}
+table.data thead th .arrow{font-size:10px;margin-left:3px;}
+table.data tbody tr:hover{background:#f6f8ff;}
+
+#detailTable thead th{color:#1e3a8a;background:#dbe8ff;border-right:1px solid #fff;}
+#detailTable thead th:nth-child(even){background:#b9d0fb;color:#172f73;}
+#detailTable thead th, #summaryTable thead th{white-space:nowrap;}
+#detailTable thead th .arrow{color:#3b5fa8;}
+
+#summaryTable.no-sort thead th{cursor:default;color:#5b21b6;background:#ede4ff;border-right:1px solid #fff;}
+#summaryTable.no-sort thead th:nth-child(even){background:#d8c8fb;color:#4c1d95;}
 #summaryTable tbody tr{cursor:default;}
 #summaryTable tbody tr:hover{background:transparent;}
 #summaryTable tbody tr.kong-subtotal{font-weight:800;}
 #summaryTable tbody tr.kong-subtotal td{color:var(--text);}
-tr.grand-total td{font-weight:800;background:var(--panel2);border-top:2px solid var(--accent);}
-.badge{display:inline-block;padding:2px 9px;border-radius:999px;font-size:11.5px;font-weight:600;}
-.badge.billed{background:#123626;color:var(--green);}
-.badge.pending{background:#3a2c10;color:var(--amber);}
-.badge.chg-new{background:#122c3a;color:#6ec8ff;}
-.badge.chg-progressed{background:#123626;color:var(--green);}
-.badge.chg-still_pending{background:#332a10;color:var(--amber);}
-.badge.chg-still_billed{background:#20263a;color:#a7b3ff;}
+tr.grand-total td{font-weight:800;background:#eef2ff;border-top:2px solid var(--blue);}
+
+.badge{display:inline-block;padding:3px 10px;border-radius:999px;font-size:11.5px;font-weight:700;}
+.badge.billed{background:#e6f9ee;color:var(--green);}
+.badge.pending{background:#fff3e0;color:var(--amber);}
+.badge.chg-new{background:#e7f0ff;color:var(--blue);}
+.badge.chg-progressed{background:#e6f9ee;color:var(--green);}
+.badge.chg-still_pending{background:#fff3e0;color:var(--amber);}
+.badge.chg-still_billed{background:#f1eaff;color:var(--purple);}
 .empty-row td{text-align:center;color:var(--muted);padding:24px;}
 
 footer{text-align:center;color:var(--muted);font-size:12px;padding:20px 0 6px;}
 
+@media(max-width:1100px){
+  .grid3{grid-template-columns:1fr;}
+}
 @media(max-width:900px){
   .kpis{grid-template-columns:1fr;}
-  .grid2{grid-template-columns:1fr;}
+}
+@media(max-width:600px){
+  body{padding:16px;}
+  .filters select,.filters input[type=text]{flex:1 1 100%;min-width:0;}
+  .metric-row{justify-content:space-between;}
 }
 
 </style>
@@ -187,61 +251,56 @@ footer{text-align:center;color:var(--muted);font-size:12px;padding:20px 0 6px;}
       <option value="still_pending">ตรวจการจ้าง→ตรวจการจ้าง</option>
       <option value="still_billed">ขอเบิกค่าจ้าง→ขอเบิกค่าจ้าง</option>
     </select>
-    <select id="fPmScl"><option value="">ทุก พม-สคล/สตจ</option></select>
-    <select id="fPmDept"><option value="">ทุก พม-ฝ่าย</option></select>
+    <select id="fPmScl" title="กรองเฉพาะรายการที่ขอเบิกค่าจ้างแล้ว"><option value="">พม-สคล/สตจ: ทั้งหมด</option><option value="has">พม-สคล/สตจ: มี</option><option value="none">พม-สคล/สตจ: ไม่มี</option></select>
+    <select id="fPmDept" title="กรองเฉพาะรายการที่ขอเบิกค่าจ้างแล้ว"><option value="">พม-ฝ่าย: ทั้งหมด</option><option value="has">พม-ฝ่าย: มี</option><option value="none">พม-ฝ่าย: ไม่มี</option></select>
     <button class="clear-btn" id="btnClear">ล้างตัวกรอง</button>
   </div>
 
+  <div class="active-chips" id="activeChips"></div>
+
   <div class="kpis">
-    <div class="kpi-card all">
-      <div class="kpi-label">จำนวนทั้งหมด</div>
+    <div class="kpi-card all" id="cardAll">
+      <div class="kpi-head"><div class="kpi-icon"><svg viewBox="0 0 16 16"><rect x="3" y="2" width="10" height="12" rx="1.5" fill="none" stroke="#8a90b0" stroke-width="1.4"/><path d="M5.5 6h5M5.5 8.5h5M5.5 11h3" stroke="#8a90b0" stroke-width="1.3" stroke-linecap="round"/></svg></div><div class="kpi-label">รายการทั้งหมด</div></div>
       <div class="kpi-value" id="cardAllCount">-</div>
-      <div class="kpi-amount">มูลค่ารวม <b id="cardAllAmount">-</b> บาท</div>
+      <div class="kpi-amount">มูลค่ารวม <b><span id="cardAllAmount">-</span> บาท</b></div>
+      <div class="kpi-insight">สัญญาทั้งหมดในตัวกรองปัจจุบัน</div>
     </div>
-    <div class="kpi-card billed">
-      <div class="kpi-label">ขอเบิกค่าจ้างแล้ว</div>
+    <div class="kpi-card billed" id="cardBilled">
+      <div class="kpi-head"><div class="kpi-icon"><svg viewBox="0 0 16 16"><rect x="1.5" y="1.5" width="13" height="13" rx="3" fill="#22a755"/><path d="M4.6 8.2l2.2 2.2 4.6-4.8" stroke="#fff" stroke-width="1.8" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg></div><div class="kpi-label">ขอเบิกค่าจ้างแล้ว</div></div>
       <div class="kpi-value" id="cardBilledCount">-</div>
-      <div class="kpi-amount">มูลค่ารวม <b id="cardBilledAmount">-</b> บาท</div>
-      <div class="kpi-breakdown">
-        <div class="bk-title">สรุปตาม พม-สคล/สตจ</div>
-        <div class="chip-row" id="cardBilledSclChips"></div>
-      </div>
-      <div class="kpi-breakdown">
-        <div class="bk-title">สรุปตาม พม-ฝ่าย</div>
-        <div class="chip-row" id="cardBilledDeptChips"></div>
-      </div>
+      <div class="kpi-amount">มูลค่ารวม <b><span id="cardBilledAmount">-</span> บาท</b></div>
+      <div class="kpi-insight" id="cardBilledPct">-</div>
     </div>
-    <div class="kpi-card pending">
-      <div class="kpi-label">ยังไม่ขอเบิกค่าจ้าง</div>
+    <div class="kpi-card pending" id="cardPending">
+      <div class="kpi-head"><div class="kpi-icon"><svg viewBox="0 0 16 16"><circle cx="8" cy="8" r="6.2" fill="none" stroke="#e11d48" stroke-width="1.5"/><path d="M8 4.6V8l2.4 1.6" stroke="#e11d48" stroke-width="1.5" fill="none" stroke-linecap="round"/></svg></div><div class="kpi-label">ยังไม่ขอเบิกค่าจ้าง</div></div>
       <div class="kpi-value" id="cardPendingCount">-</div>
-      <div class="kpi-amount">มูลค่ารวม <b id="cardPendingAmount">-</b> บาท</div>
+      <div class="kpi-amount">มูลค่ารวม <b><span id="cardPendingAmount">-</span> บาท</b></div>
+      <div class="kpi-insight" id="cardPendingPct">-</div>
     </div>
   </div>
 
-  <div class="grid2">
-    <div class="panel">
-      <h3>อันดับตามกอง <span class="tag">จำนวนรายการ</span></h3>
-      <div id="kongRank"></div>
-    </div>
-    <div class="panel">
-      <h3>อันดับตามสาขา <span class="tag">จำนวนรายการ</span></h3>
-      <div id="branchRank"></div>
-    </div>
+  <div class="metric-row">
+    แสดงเมตริกในกราฟ:
+    <select id="fRankMetric">
+      <option value="count">จำนวนรายการ</option>
+      <option value="amount">มูลค่า (บาท)</option>
+    </select>
   </div>
 
-  <div class="grid2">
+  <div class="grid3">
     <div class="panel">
-      <h3>สัดส่วนสถานะ</h3>
+      <h3>กอง <span class="tag">— คลิกแท่งเพื่อกรอง</span></h3>
+      <div class="rank-list" id="kongRank"></div>
+    </div>
+    <div class="panel">
+      <h3>สาขา <span class="tag">— คลิกแท่งเพื่อกรอง</span></h3>
+      <div class="rank-list" id="branchRank"></div>
+    </div>
+    <div class="panel">
+      <h3>สถานะขอเบิกค่าจ้าง</h3>
       <div class="donut-wrap">
         <div class="donut-canvas-box"><canvas id="donutChart"></canvas></div>
         <div class="donut-legend" id="donutLegend"></div>
-      </div>
-    </div>
-    <div class="panel">
-      <h3>สัดส่วนการเปลี่ยนแปลงจากรอบก่อน (BF)</h3>
-      <div class="donut-wrap">
-        <div class="donut-canvas-box"><canvas id="changeChart"></canvas></div>
-        <div class="donut-legend" id="changeLegend"></div>
       </div>
     </div>
   </div>
@@ -250,8 +309,8 @@ footer{text-align:center;color:var(--muted);font-size:12px;padding:20px 0 6px;}
     <div class="table-head">
       <h3>ตารางสรุปรายกอง/สาขา</h3>
       <div class="export-btns">
-        <button id="btnPdfSummary">⬇ PDF</button>
-        <button id="btnXlsxSummary">⬇ Excel</button>
+        <button class="pdf" id="btnPdfSummary">⬇ PDF</button>
+        <button class="xlsx" id="btnXlsxSummary">⬇ Excel</button>
       </div>
     </div>
     <div class="table-scroll">
@@ -277,8 +336,8 @@ footer{text-align:center;color:var(--muted);font-size:12px;padding:20px 0 6px;}
     <div class="table-head">
       <h3>ตารางรายละเอียด <span id="detailCount" style="color:var(--muted);font-weight:400;font-size:13px;"></span></h3>
       <div class="export-btns">
-        <button id="btnPdfDetail">⬇ PDF</button>
-        <button id="btnXlsxDetail">⬇ Excel</button>
+        <button class="pdf" id="btnPdfDetail">⬇ PDF</button>
+        <button class="xlsx" id="btnXlsxDetail">⬇ Excel</button>
       </div>
     </div>
     <div class="table-scroll">
@@ -355,8 +414,7 @@ const META = PAYLOAD.meta || {};
 const TODAY = META.updateDate ? new Date(META.updateDate) : new Date();
 const BF_DATE = META.bfDate ? new Date(META.bfDate) : null;
 
-const KONG_COLORS = {'มบ.':'#F0883E', 'ตบ.1':'#F0B429', 'ตบ.2':'#C4D93B'};
-function kongColor(k){ return KONG_COLORS[k] || '#4f8cff'; }
+function kongColor(k){ return paletteColor(k); }
 
 const CHANGE_TYPES = {
   new: {label:'ใหม่', color:'#6ec8ff'},
@@ -389,8 +447,21 @@ const ALL = RAW.map((r, i) => ({
   bucket: bucketOf(r.pending ? r.daysPending : null),
 }));
 
+const RANK_PALETTE = ['#F0883E','#8B5CF6','#C4D93B','#0d9488','#22c9c9','#2f6fed','#f472b6','#f59e0b','#84cc16','#0ea5e9'];
+// colours for rank bars, assigned by position (1st orange, 2nd gold, ...)
+const BAR_PALETTE = ['#F0883E','#F0B429','#C4D93B','#4CAF50','#22B5A8','#3BA0E6','#6C7FE8','#A77BF3','#EC6FA8','#F2785C','#E0A93B','#9CC653','#3FBF8F','#35A7D6','#8391F0'];
+function barColor(i){ return BAR_PALETTE[i % BAR_PALETTE.length]; }
+const colorCache = {};
+function paletteColor(key){
+  if(colorCache[key] != null) return RANK_PALETTE[colorCache[key]];
+  const idx = Object.keys(colorCache).length % RANK_PALETTE.length;
+  colorCache[key] = idx;
+  return RANK_PALETTE[idx];
+}
+
 const state = {
   kong: '', branch: '', search: '', bucket: '', change: '', pmScl: '', pmDept: '',
+  status: '', rankMetric: 'count',
   sortKey: null, sortDir: 1,
 };
 
@@ -414,15 +485,23 @@ function safe(fn, label){
 function filterRecords(exclude){
   exclude = exclude || [];
   return ALL.filter(r=>{
+    if(!exclude.includes('status') && state.status){
+      if(state.status === 'billed' && r.pending) return false;
+      if(state.status === 'pending' && !r.pending) return false;
+    }
     if(!exclude.includes('kong') && state.kong && r.kong !== state.kong) return false;
     if(!exclude.includes('branch') && state.branch && r.branch !== state.branch) return false;
     if(!exclude.includes('bucket') && state.bucket && r.bucket !== state.bucket) return false;
     if(!exclude.includes('change') && state.change && r.changeKey !== state.change) return false;
     if(!exclude.includes('pmScl') && state.pmScl){
-      if(state.pmScl === '__blank__'){ if(r.pmScl) return false; } else if(r.pmScl !== state.pmScl) return false;
+      if(r.pending) return false;
+      if(state.pmScl === 'has' && !r.pmScl) return false;
+      if(state.pmScl === 'none' && r.pmScl) return false;
     }
     if(!exclude.includes('pmDept') && state.pmDept){
-      if(state.pmDept === '__blank__'){ if(r.pmDept) return false; } else if(r.pmDept !== state.pmDept) return false;
+      if(r.pending) return false;
+      if(state.pmDept === 'has' && !r.pmDept) return false;
+      if(state.pmDept === 'none' && r.pmDept) return false;
     }
     if(!exclude.includes('search') && state.search){
       const q = state.search.toLowerCase();
@@ -439,8 +518,10 @@ function uniqueSorted(arr){ return Array.from(new Set(arr.filter(x=>x!=null && x
 function populateFilters(){
   const kongs = uniqueSorted(ALL.map(r=>r.kong));
   const branches = uniqueSorted(ALL.map(r=>r.branch));
-  const scls = uniqueSorted(ALL.map(r=>r.pmScl));
-  const depts = uniqueSorted(ALL.map(r=>r.pmDept));
+
+  // seed stable rank colors in a fixed order so they never shift when filtering
+  kongs.forEach(paletteColor);
+  branches.forEach(paletteColor);
 
   const fKong = $('#fKong');
   kongs.forEach(k=>{ const o=document.createElement('option'); o.value=k; o.textContent=k; fKong.appendChild(o); });
@@ -448,15 +529,6 @@ function populateFilters(){
   const fBranch = $('#fBranch');
   branches.forEach(b=>{ const o=document.createElement('option'); o.value=b; o.textContent=b; fBranch.appendChild(o); });
 
-  const fPmScl = $('#fPmScl');
-  scls.forEach(v=>{ const o=document.createElement('option'); o.value=v; o.textContent=v; fPmScl.appendChild(o); });
-  const blankSclCount = ALL.filter(r=>!r.pending && !r.pmScl).length;
-  if(blankSclCount>0){ const o=document.createElement('option'); o.value='__blank__'; o.textContent='(ยังไม่ระบุ)'; fPmScl.appendChild(o); }
-
-  const fPmDept = $('#fPmDept');
-  depts.forEach(v=>{ const o=document.createElement('option'); o.value=v; o.textContent=v; fPmDept.appendChild(o); });
-  const blankDeptCount = ALL.filter(r=>!r.pending && !r.pmDept).length;
-  if(blankDeptCount>0){ const o=document.createElement('option'); o.value='__blank__'; o.textContent='(ยังไม่ระบุ)'; fPmDept.appendChild(o); }
 }
 
 function bindFilters(){
@@ -467,57 +539,94 @@ function bindFilters(){
   $('#fChange').addEventListener('change', e=>{ state.change = e.target.value; renderAll(); });
   $('#fPmScl').addEventListener('change', e=>{ state.pmScl = e.target.value; renderAll(); });
   $('#fPmDept').addEventListener('change', e=>{ state.pmDept = e.target.value; renderAll(); });
+  $('#fRankMetric').addEventListener('change', e=>{ state.rankMetric = e.target.value; renderAll(); });
   $('#btnClear').addEventListener('click', ()=>{
-    state.kong=''; state.branch=''; state.search=''; state.bucket=''; state.change=''; state.pmScl=''; state.pmDept='';
+    state.kong=''; state.branch=''; state.search=''; state.bucket=''; state.change=''; state.pmScl=''; state.pmDept=''; state.status='';
     $('#fKong').value=''; $('#fBranch').value=''; $('#fSearch').value=''; $('#fBucket').value=''; $('#fChange').value=''; $('#fPmScl').value=''; $('#fPmDept').value='';
     renderAll();
   });
   $('#dqToggle').addEventListener('click', ()=>{ $('#dqNote').classList.toggle('open'); });
+
+  $('#cardAll').addEventListener('click', ()=>{ state.status = ''; renderAll(); });
+  $('#cardBilled').addEventListener('click', ()=>{
+    state.status = (state.status === 'billed') ? '' : 'billed';
+    renderAll();
+  });
+  $('#cardPending').addEventListener('click', ()=>{
+    state.status = (state.status === 'pending') ? '' : 'pending';
+    renderAll();
+  });
+}
+
+// each filter has its own colour, used on its dropdown and its chip when active
+const FILTER_COLORS = {
+  kong:'#ea580c', branch:'#0d9488', search:'#2563eb', bucket:'#0891b2',
+  change:'#b45309', pmScl:'#7c3aed', pmDept:'#db2777',
+};
+function filterColor(k, v){
+  if(k === 'status') return v === 'billed' ? '#16a34a' : '#e11d48';
+  return FILTER_COLORS[k] || '#374151';
+}
+const FILTER_INPUTS = {kong:'#fKong',branch:'#fBranch',search:'#fSearch',bucket:'#fBucket',change:'#fChange',pmScl:'#fPmScl',pmDept:'#fPmDept'};
+function syncFilterStyles(){
+  Object.entries(FILTER_INPUTS).forEach(([k,sel])=>{
+    const el = $(sel); if(!el) return;
+    el.style.setProperty('--fc', filterColor(k, state[k]));
+    el.classList.toggle('on', !!state[k]);
+  });
+}
+
+const BUCKET_LABELS = {'0-7':'0-7 วัน','8-15':'8-15 วัน','16-30':'16-30 วัน','31+':'มากกว่า 30 วัน'};
+const FILTER_LABELS = {
+  status: v => `สถานะ: ${v==='billed'?'ขอเบิกค่าจ้างแล้ว':'ยังไม่ขอเบิกค่าจ้าง'}`,
+  kong: v => `กอง: ${v}`,
+  branch: v => `สาขา: ${v}`,
+  search: v => `ค้นหา: ${v}`,
+  bucket: v => `ช่วงวันค้างเบิก: ${BUCKET_LABELS[v]||v}`,
+  change: v => `การเปลี่ยนแปลง: ${changeInfo(v).label}`,
+  pmScl: v => `พม-สคล/สตจ: ${v==='has'?'มี':'ไม่มี'}`,
+  pmDept: v => `พม-ฝ่าย: ${v==='has'?'มี':'ไม่มี'}`,
+};
+
+function renderActiveChips(){
+  const box = $('#activeChips');
+  const keys = ['status','kong','branch','search','bucket','change','pmScl','pmDept'];
+  const active = keys.filter(k => state[k]);
+  syncFilterStyles();
+  if(!active.length){ box.innerHTML=''; return; }
+  box.innerHTML = active.map(k => `<span class="active-chip" data-key="${k}" style="--fc:${filterColor(k, state[k])}">${esc(FILTER_LABELS[k](state[k]))}<span class="x" data-key="${k}">✕</span></span>`).join('');
+  box.querySelectorAll('.x').forEach(x=>{
+    x.addEventListener('click', ()=>{
+      const k = x.dataset.key;
+      state[k] = '';
+      const selMap = {kong:'#fKong',branch:'#fBranch',search:'#fSearch',bucket:'#fBucket',change:'#fChange',pmScl:'#fPmScl',pmDept:'#fPmDept'};
+      if(selMap[k]) $(selMap[k]).value = '';
+      renderAll();
+    });
+  });
 }
 
 // ---- KPI cards ----
 function renderKpis(){
-  const cur = filterRecords([]);
+  const cur = filterRecords(['status']);
   const billed = cur.filter(r=>!r.pending);
   const pending = cur.filter(r=>r.pending);
+  const total = cur.length || 1;
 
   $('#cardAllCount').textContent = fmtInt(cur.length);
   $('#cardAllAmount').textContent = fmtAmt(cur.reduce((s,r)=>s+r.amount,0));
   $('#cardBilledCount').textContent = fmtInt(billed.length);
   $('#cardBilledAmount').textContent = fmtAmt(billed.reduce((s,r)=>s+r.amount,0));
+  $('#cardBilledPct').textContent = `${(billed.length/total*100).toFixed(1)}% ของทั้งหมด`;
   $('#cardPendingCount').textContent = fmtInt(pending.length);
   $('#cardPendingAmount').textContent = fmtAmt(pending.reduce((s,r)=>s+r.amount,0));
+  const overdue60 = pending.filter(r=>r.daysPending!=null && r.daysPending>60).length;
+  $('#cardPendingPct').textContent = `${(pending.length/total*100).toFixed(1)}% ของทั้งหมด · ค้างเกิน 60 วัน ${fmtInt(overdue60)} รายการ`;
 
-  // breakdown chips for billed: พม-สคล/สตจ and พม-ฝ่าย, computed on billed records excluding their own filter
-  const billedForScl = filterRecords(['pmScl']).filter(r=>!r.pending);
-  const sclCounts = {};
-  billedForScl.forEach(r=>{ const k = r.pmScl || '(ยังไม่ระบุ)'; sclCounts[k] = (sclCounts[k]||0)+1; });
-  renderChips('#cardBilledSclChips', sclCounts, 'pmScl');
+  $('#cardAll').classList.toggle('active', state.status==='');
+  $('#cardBilled').classList.toggle('active', state.status==='billed');
+  $('#cardPending').classList.toggle('active', state.status==='pending');
 
-  const billedForDept = filterRecords(['pmDept']).filter(r=>!r.pending);
-  const deptCounts = {};
-  billedForDept.forEach(r=>{ const k = r.pmDept || '(ยังไม่ระบุ)'; deptCounts[k] = (deptCounts[k]||0)+1; });
-  renderChips('#cardBilledDeptChips', deptCounts, 'pmDept');
-}
-
-function renderChips(sel, counts, filterKey){
-  const box = $(sel);
-  const entries = Object.entries(counts).sort((a,b)=> b[1]-a[1]);
-  if(!entries.length){ box.innerHTML = '<span style="color:var(--muted);font-size:12px;">ไม่มีข้อมูล</span>'; return; }
-  box.innerHTML = entries.map(([label,count])=>{
-    const val = label === '(ยังไม่ระบุ)' ? '__blank__' : label;
-    const active = state[filterKey] === val;
-    return `<span class="chip${active?' active':''}" data-filterkey="${filterKey}" data-val="${esc(val)}">${esc(label)}<span class="n">${fmtInt(count)}</span></span>`;
-  }).join('');
-  box.querySelectorAll('.chip').forEach(chip=>{
-    chip.addEventListener('click', ()=>{
-      const fk = chip.dataset.filterkey, val = chip.dataset.val;
-      state[fk] = (state[fk] === val) ? '' : val;
-      const sel2 = fk === 'pmScl' ? '#fPmScl' : '#fPmDept';
-      $(sel2).value = state[fk];
-      renderAll();
-    });
-  });
 }
 
 // ---- ranking lists ----
@@ -526,22 +635,51 @@ function renderRankings(){
   renderRankBranch();
 }
 
-function renderRankKong(){
-  const data = filterRecords(['kong']);
-  const counts = {};
-  Object.keys(KONG_COLORS).forEach(k=>counts[k]=0);
-  data.forEach(r=>{ if(r.kong) counts[r.kong] = (counts[r.kong]||0)+1; });
-  const entries = Object.entries(counts).sort((a,b)=>b[1]-a[1]);
-  const max = Math.max(1, ...entries.map(e=>e[1]));
-  const box = $('#kongRank');
-  box.innerHTML = entries.map(([k,v])=>{
-    const dim = state.kong && state.kong !== k;
-    const pct = Math.round(v/max*100);
-    return `<div class="rank-row${dim?' dim':''}" data-kong="${esc(k)}" style="cursor:pointer;">
-      <div class="rank-label-row"><span class="rank-label">${esc(k)}</span><span class="rank-value">${fmtInt(v)}</span></div>
-      <div class="rank-track"><div class="rank-fill" style="width:${pct}%;background:${kongColor(k)};"></div></div>
+function metricValue(rows){
+  return state.rankMetric === 'amount' ? rows.reduce((s,r)=>s+r.amount,0) : rows.length;
+}
+function fmtMetric(v){
+  return state.rankMetric === 'amount' ? fmtAmt(v) : fmtInt(v);
+}
+
+let _measureCtx = null;
+function textWidthEstimate(text, fontSize, fontWeight){
+  fontSize = fontSize || 12.5; fontWeight = fontWeight || 700;
+  try{
+    if(!_measureCtx){ _measureCtx = document.createElement('canvas').getContext('2d'); }
+    _measureCtx.font = `${fontWeight} ${fontSize}px "Segoe UI","Noto Sans Thai",sans-serif`;
+    return _measureCtx.measureText(text).width;
+  }catch(e){
+    return String(text).length * (fontSize*0.62);
+  }
+}
+
+// bar width (%) proportional to value, but never narrower than the label pill
+function rankBarWidth(label, value, maxValue){
+  const minPx = Math.ceil(textWidthEstimate(label, 12, 700)) + 24 + 18;
+  const pct = maxValue > 0 ? value / maxValue * 100 : 0;
+  return `max(${minPx}px, ${pct.toFixed(2)}%)`;
+}
+
+function rankRowsHtml(entries, selected, dataAttr){
+  const maxV = Math.max(1, ...entries.map(e=>e[1]));
+  return entries.map(([k,v],i)=>{
+    const dim = selected && selected !== k;
+    return `<div class="rank-row${dim?' dim':''}" ${dataAttr}="${esc(k)}">
+      <span class="rank-num">${i+1}</span>
+      <div class="rank-track"><span class="rank-badge" style="background:${barColor(i)};width:${rankBarWidth(k, v, maxV)};"><span class="rank-label-badge">${esc(k)}</span></span></div>
+      <span class="rank-value">${fmtMetric(v)}</span>
     </div>`;
   }).join('');
+}
+
+function renderRankKong(){
+  const data = filterRecords(['kong']);
+  const byKong = {};
+  data.forEach(r=>{ if(r.kong){ (byKong[r.kong] = byKong[r.kong]||[]).push(r); } });
+  const entries = Object.entries(byKong).map(([k,rows])=>[k, metricValue(rows)]).sort((a,b)=>b[1]-a[1]);
+  const box = $('#kongRank');
+  box.innerHTML = entries.length ? rankRowsHtml(entries, state.kong, 'data-kong') : '<span style="color:var(--muted);font-size:12.5px;">ไม่มีข้อมูล</span>';
   box.querySelectorAll('.rank-row').forEach(el=>{
     el.addEventListener('click', ()=>{
       const k = el.dataset.kong;
@@ -554,22 +692,11 @@ function renderRankKong(){
 
 function renderRankBranch(){
   const data = filterRecords(['branch']);
-  const counts = {};
-  data.forEach(r=>{ if(r.branch) counts[r.branch] = (counts[r.branch]||0)+1; });
-  const entries = Object.entries(counts).sort((a,b)=>b[1]-a[1]);
-  const max = Math.max(1, ...entries.map(e=>e[1]));
+  const byBranch = {};
+  data.forEach(r=>{ if(r.branch){ (byBranch[r.branch] = byBranch[r.branch]||[]).push(r); } });
+  const entries = Object.entries(byBranch).map(([b,rows])=>[b, metricValue(rows)]).sort((a,b)=>b[1]-a[1]);
   const box = $('#branchRank');
-  const branchKong = {};
-  ALL.forEach(r=>{ if(r.branch && !branchKong[r.branch]) branchKong[r.branch]=r.kong; });
-  box.innerHTML = entries.map(([b,v])=>{
-    const dim = state.branch && state.branch !== b;
-    const pct = Math.round(v/max*100);
-    const color = kongColor(branchKong[b]);
-    return `<div class="rank-row${dim?' dim':''}" data-branch="${esc(b)}" style="cursor:pointer;">
-      <div class="rank-label-row"><span class="rank-label">${esc(b)}</span><span class="rank-value">${fmtInt(v)}</span></div>
-      <div class="rank-track"><div class="rank-fill" style="width:${pct}%;background:${color};"></div></div>
-    </div>`;
-  }).join('');
+  box.innerHTML = entries.length ? rankRowsHtml(entries, state.branch, 'data-branch') : '<span style="color:var(--muted);font-size:12.5px;">ไม่มีข้อมูล</span>';
   box.querySelectorAll('.rank-row').forEach(el=>{
     el.addEventListener('click', ()=>{
       const b = el.dataset.branch;
@@ -580,8 +707,8 @@ function renderRankBranch(){
   });
 }
 
-// ---- donut charts ----
-let donutChartInst = null, changeChartInst = null;
+// ---- donut chart ----
+let donutChartInst = null;
 
 const donutLabelPlugin = {
   id: 'donutLabelPlugin',
@@ -598,18 +725,19 @@ const donutLabelPlugin = {
       const val = chart.data.datasets[0].data[i];
       if(!val) return;
       const pct = Math.round(val/total*100);
-      const pos = arc.tooltipPosition();
-      let x = pos.x, y = pos.y;
-      const margin = 24;
+      const mid = (arc.startAngle + arc.endAngle) / 2;
+      const rr = arc.outerRadius * 0.92;
+      let x = arc.x + Math.cos(mid) * rr, y = arc.y + Math.sin(mid) * rr;
+      const margin = 30;
       x = Math.max(margin, Math.min(chart.width - margin, x));
       y = Math.max(margin, Math.min(chart.height - margin, y));
       const text = `${val} (${pct}%)`;
       const tw = ctx.measureText(text).width;
-      ctx.fillStyle = 'rgba(15,20,32,0.85)';
+      ctx.fillStyle = '#3b4252';
       ctx.beginPath();
-      const pad = 5;
-      const rx = x - tw/2 - pad, ry = y - 9, rw = tw + pad*2, rh = 18;
-      if(ctx.roundRect) ctx.roundRect(rx, ry, rw, rh, 5); else ctx.rect(rx,ry,rw,rh);
+      const pad = 7;
+      const rx = x - tw/2 - pad, ry = y - 10, rw = tw + pad*2, rh = 20;
+      if(ctx.roundRect) ctx.roundRect(rx, ry, rw, rh, 10); else ctx.rect(rx,ry,rw,rh);
       ctx.fill();
       ctx.fillStyle = '#fff';
       ctx.fillText(text, x, y+1);
@@ -618,45 +746,45 @@ const donutLabelPlugin = {
   }
 };
 
+const donutCenterTextPlugin = {
+  id: 'donutCenterTextPlugin',
+  afterDraw(chart){
+    const {ctx, chartArea} = chart;
+    if(!chartArea) return;
+    const total = chart.data.datasets[0].data.reduce((a,b)=>a+b,0);
+    const cx = (chartArea.left + chartArea.right)/2;
+    const cy = (chartArea.top + chartArea.bottom)/2;
+    ctx.save();
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.font = '800 24px "Segoe UI","Noto Sans Thai",sans-serif';
+    ctx.fillStyle = '#111827';
+    ctx.fillText(fmtInt(total), cx, cy-8);
+    ctx.font = '600 11px "Segoe UI","Noto Sans Thai",sans-serif';
+    ctx.fillStyle = '#78829a';
+    ctx.fillText('รายการ', cx, cy+12);
+    ctx.restore();
+  }
+};
+
 function renderDonut(){
-  const data = filterRecords([]);
+  const data = filterRecords(['status']);
   const billed = data.filter(r=>!r.pending).length;
   const pending = data.filter(r=>r.pending).length;
   const ctx = document.getElementById('donutChart');
   if(donutChartInst) donutChartInst.destroy();
   donutChartInst = new Chart(ctx, {
     type:'doughnut',
-    data:{ labels:['ขอเบิกค่าจ้างแล้ว','ยังไม่ขอเบิก'], datasets:[{data:[billed,pending], backgroundColor:['#3ddc97','#ffb84f'], borderWidth:0}] },
-    options:{ responsive:true, maintainAspectRatio:false, cutout:'62%', plugins:{legend:{display:false}, tooltip:{enabled:true}} },
-    plugins:[donutLabelPlugin]
+    data:{ labels:['ขอเบิกค่าจ้างแล้ว','ยังไม่ขอเบิกค่าจ้าง'], datasets:[{data:[billed,pending], backgroundColor:['#22a755','#f7bfcb'], borderWidth:0}] },
+    options:{ responsive:true, maintainAspectRatio:false, cutout:'66%', layout:{padding:12}, animation:false, plugins:{legend:{display:false}, tooltip:{enabled:true}} },
+    plugins:[donutLabelPlugin, donutCenterTextPlugin]
   });
   const legend = $('#donutLegend');
   const total = billed+pending || 1;
   legend.innerHTML = [
-    {c:'#3ddc97', l:'ขอเบิกค่าจ้างแล้ว', v:billed},
-    {c:'#ffb84f', l:'ยังไม่ขอเบิก', v:pending},
-  ].map(it=>`<div class="legend-item"><span class="legend-dot" style="background:${it.c}"></span>${it.l}<span class="lv">${fmtInt(it.v)} (${Math.round(it.v/total*100)}%)</span></div>`).join('');
-}
-
-function renderChangeDonut(){
-  const data = filterRecords(['change']);
-  const counts = {};
-  CHANGE_ORDER.forEach(k=>counts[k]=0);
-  data.forEach(r=>{ if(r.changeKey) counts[r.changeKey] = (counts[r.changeKey]||0)+1; });
-  const labels = CHANGE_ORDER.map(k=>changeInfo(k).label);
-  const colors = CHANGE_ORDER.map(k=>changeInfo(k).color);
-  const values = CHANGE_ORDER.map(k=>counts[k]);
-  const ctx = document.getElementById('changeChart');
-  if(changeChartInst) changeChartInst.destroy();
-  changeChartInst = new Chart(ctx, {
-    type:'doughnut',
-    data:{ labels, datasets:[{data:values, backgroundColor:colors, borderWidth:0}] },
-    options:{ responsive:true, maintainAspectRatio:false, cutout:'62%', plugins:{legend:{display:false}, tooltip:{enabled:true}} },
-    plugins:[donutLabelPlugin]
-  });
-  const legend = $('#changeLegend');
-  const total = values.reduce((a,b)=>a+b,0) || 1;
-  legend.innerHTML = CHANGE_ORDER.map((k,i)=>`<div class="legend-item"><span class="legend-dot" style="background:${colors[i]}"></span>${labels[i]}<span class="lv">${fmtInt(values[i])} (${Math.round(values[i]/total*100)}%)</span></div>`).join('');
+    {c:'#22a755', l:'ขอเบิกค่าจ้างแล้ว', v:billed},
+    {c:'#f7bfcb', l:'ยังไม่ขอเบิกค่าจ้าง', v:pending},
+  ].map(it=>`<div class="legend-item"><span class="legend-dot" style="background:${it.c}"></span>${it.l} <span class="lv">${fmtInt(it.v)}</span></div>`).join('');
 }
 
 // ---- grouped summary table (non-interactive) ----
@@ -678,7 +806,8 @@ function buildGroupedSummary(){
     if(!byKong[g.kong]) byKong[g.kong] = [];
     byKong[g.kong].push(g);
   });
-  const kongOrder = Object.keys(KONG_COLORS).filter(k=>byKong[k]);
+  const knownKongs = uniqueSorted(ALL.map(r=>r.kong));
+  const kongOrder = knownKongs.filter(k=>byKong[k]);
   Object.keys(byKong).forEach(k=>{ if(!kongOrder.includes(k)) kongOrder.push(k); });
   return kongOrder.map(k=>{
     const list = byKong[k].sort((a,b)=>String(a.branch).localeCompare(String(b.branch),'th'));
@@ -798,6 +927,7 @@ function openPrintWindow(title, tableEl){
     th,td{border:1px solid #999;padding:5px 7px;text-align:right;}
     th.left,td.left{text-align:left;}
     thead th{background:#eee;}
+    thead th:nth-child(even){background:#d6d6d6;}
     tr.kong-subtotal,tr.grand-total{font-weight:700;background:#f3f3f3;}
   </style>`;
   const clone = tableEl.cloneNode(true);
@@ -848,10 +978,10 @@ function bindExports(){
 
 // ---- top-level render ----
 function renderAll(){
+  safe(renderActiveChips, 'activeChips');
   safe(renderKpis, 'kpis');
   safe(renderRankings, 'rankings');
   safe(renderDonut, 'donut');
-  safe(renderChangeDonut, 'changeDonut');
   safe(renderSummary, 'summary');
   safe(renderDetail, 'detail');
 }
