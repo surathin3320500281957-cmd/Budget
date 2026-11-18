@@ -328,6 +328,10 @@ footer{text-align:center;color:var(--muted);font-size:12px;padding:20px 0 6px;}
             <th>ยังไม่ขอเบิก</th>
             <th>มูลค่าที่ค้าง</th>
             <th>มูลค่ารวม</th>
+            <th>พม-สคล/สตจ มี</th>
+            <th>พม-สคล/สตจ ไม่มี</th>
+            <th>พม-ฝ่าย มี</th>
+            <th>พม-ฝ่าย ไม่มี</th>
           </tr>
         </thead>
         <tbody id="summaryBody"></tbody>
@@ -797,9 +801,11 @@ function buildGroupedSummary(){
     const kong = r.kong || '-';
     const branch = r.branch || '-';
     const key = kong+'|'+branch;
-    if(!groups[key]) groups[key] = {kong, branch, count:0, billed:0, billedAmount:0, pending:0, pendingAmount:0, amount:0};
+    if(!groups[key]) groups[key] = {kong, branch, count:0, billed:0, billedAmount:0, pending:0, pendingAmount:0, amount:0, sclHas:0, deptHas:0};
     const g = groups[key];
     g.count++; g.amount += r.amount;
+    if(r.pmScl) g.sclHas++;
+    if(r.pmDept) g.deptHas++;
     if(r.pending){ g.pending++; g.pendingAmount += r.amount; }
     else { g.billed++; g.billedAmount += r.amount; }
   });
@@ -817,18 +823,23 @@ function buildGroupedSummary(){
   });
 }
 
+function pmCells(o){
+  return `<td>${fmtInt(o.sclHas)}</td><td>${fmtInt(o.count-o.sclHas)}</td><td>${fmtInt(o.deptHas)}</td><td>${fmtInt(o.count-o.deptHas)}</td>`;
+}
+
 function renderSummary(){
   const kongGroups = buildGroupedSummary();
   const body = $('#summaryBody');
-  if(!kongGroups.length){ body.innerHTML = '<tr class="empty-row"><td colspan="8">ไม่มีข้อมูลตรงกับตัวกรองนี้</td></tr>'; return; }
+  if(!kongGroups.length){ body.innerHTML = '<tr class="empty-row"><td colspan="12">ไม่มีข้อมูลตรงกับตัวกรองนี้</td></tr>'; return; }
   let rowsHtml = '';
-  let grand = {count:0, billed:0, billedAmount:0, pending:0, pendingAmount:0, amount:0};
+  let grand = {count:0, billed:0, billedAmount:0, pending:0, pendingAmount:0, amount:0, sclHas:0, deptHas:0};
   kongGroups.forEach(kg=>{
     const color = kongColor(kg.kong);
-    let sub = {count:0, billed:0, billedAmount:0, pending:0, pendingAmount:0, amount:0};
+    let sub = {count:0, billed:0, billedAmount:0, pending:0, pendingAmount:0, amount:0, sclHas:0, deptHas:0};
     kg.list.forEach(g=>{
       sub.count+=g.count; sub.billed+=g.billed; sub.billedAmount+=g.billedAmount;
       sub.pending+=g.pending; sub.pendingAmount+=g.pendingAmount; sub.amount+=g.amount;
+      sub.sclHas+=g.sclHas; sub.deptHas+=g.deptHas;
       rowsHtml += `<tr style="border-left:4px solid ${color};">
         <td class="left">${esc(g.kong)}</td>
         <td class="left">${esc(g.branch)}</td>
@@ -838,6 +849,7 @@ function renderSummary(){
         <td>${fmtInt(g.pending)}</td>
         <td>${fmtAmt(g.pendingAmount)}</td>
         <td>${fmtAmt(g.amount)}</td>
+        ${pmCells(g)}
       </tr>`;
     });
     rowsHtml += `<tr class="kong-subtotal" style="border-left:4px solid ${color};background:${color}22;">
@@ -848,9 +860,11 @@ function renderSummary(){
       <td>${fmtInt(sub.pending)}</td>
       <td>${fmtAmt(sub.pendingAmount)}</td>
       <td>${fmtAmt(sub.amount)}</td>
+      ${pmCells(sub)}
     </tr>`;
     grand.count+=sub.count; grand.billed+=sub.billed; grand.billedAmount+=sub.billedAmount;
     grand.pending+=sub.pending; grand.pendingAmount+=sub.pendingAmount; grand.amount+=sub.amount;
+    grand.sclHas+=sub.sclHas; grand.deptHas+=sub.deptHas;
   });
   const totalHtml = `<tr class="grand-total">
     <td class="left" colspan="2">รวมทั้งหมด</td>
@@ -860,6 +874,7 @@ function renderSummary(){
     <td>${fmtInt(grand.pending)}</td>
     <td>${fmtAmt(grand.pendingAmount)}</td>
     <td>${fmtAmt(grand.amount)}</td>
+    ${pmCells(grand)}
   </tr>`;
   body.innerHTML = rowsHtml + totalHtml;
 }
