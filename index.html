@@ -880,15 +880,29 @@ function renderSummary(){
 }
 
 // ---- detail table (sortable) ----
+// default order: kong > branch > project > address > petition no. (numeric-aware, Thai collation)
+const COLL = new Intl.Collator('th', {numeric:true});
+function defaultCompare(a,b){
+  return COLL.compare(a.kong||'', b.kong||'')
+      || COLL.compare(a.branch||'', b.branch||'')
+      || COLL.compare(a.project||'', b.project||'')
+      || COLL.compare(String(a.address||''), String(b.address||''))
+      || COLL.compare(String(a.petitionNo||''), String(b.petitionNo||''));
+}
+
 function getDetailRows(){
-  let rows = filterRecords([]);
+  const rows = filterRecords([]).slice();
   if(state.sortKey){
     const key = state.sortKey, dir = state.sortDir;
-    rows = rows.slice().sort((a,b)=>{
-      let va = a[key], vb = b[key];
-      if(typeof va === 'string') return va.localeCompare(vb, 'th') * dir;
-      return ((va||0) - (vb||0)) * dir;
+    rows.sort((a,b)=>{
+      const va = a[key], vb = b[key];
+      let c;
+      if(typeof va === 'string' || typeof vb === 'string') c = COLL.compare(va==null?'':String(va), vb==null?'':String(vb));
+      else c = (va||0) - (vb||0);
+      return (c*dir) || defaultCompare(a,b);
     });
+  } else {
+    rows.sort(defaultCompare);
   }
   return rows;
 }
